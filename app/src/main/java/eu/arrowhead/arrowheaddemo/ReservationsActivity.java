@@ -76,18 +76,18 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        //Move the camera to the venue where the demo will be presented
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(43.782391, 11.250345)));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(15.0f));
+
         //A few charging stations in Florence
-        LatLng chargingStation1 = new LatLng(43.767761, 11.255848);
-        LatLng chargingStation2 = new LatLng(43.770375, 11.257982);
-        LatLng chargingStation3 = new LatLng(43.769916, 11.254247);
+        LatLng chargingStation1 = new LatLng(43.780349, 11.253357);
+        LatLng chargingStation2 = new LatLng(43.783184, 11.254752);
+        LatLng chargingStation3 = new LatLng(43.786662, 11.250310);
 
         mMap.addMarker(new MarkerOptions().position(chargingStation1).title("Charging station 1"));
         mMap.addMarker(new MarkerOptions().position(chargingStation2).title("Charging Station 2"));
         mMap.addMarker(new MarkerOptions().position(chargingStation3).title("Charging Station 3"));
-
-        //Move the camera to the center of the markers and adjust zoom
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(43.769529, 11.255733)));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(15.0f));
     }
 
     @Override

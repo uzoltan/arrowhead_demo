@@ -7,13 +7,12 @@ import android.os.Bundle;
 
 public class SplashActivity extends AppCompatActivity {
 
-    /** Duration of wait **/
-    private final int SPLASH_DISPLAY_LENGTH = 1000;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        /* Duration of wait */
+        int SPLASH_DISPLAY_LENGTH = 1000;
         new Handler().postDelayed(new Runnable(){
             @Override
             public void run() {
