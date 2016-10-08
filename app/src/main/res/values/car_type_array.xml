@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="car_type_array">
+        <item>Audi A3</item>
+        <item>BMW i3</item>
+        <item>Ford C-Max</item>
+        <item>Kia Soul</item>
+        <item>Nissan LEAF</item>
+        <item>Tesla Model S</item>
+        <item>Tesla Model X</item>
+    </string-array>
+</resources>
