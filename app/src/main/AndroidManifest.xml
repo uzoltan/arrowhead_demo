@@ -21,8 +21,8 @@
 
         <activity
             android:name=".SplashActivity"
-            android:theme="@style/SplashTheme"
-            android:noHistory="true">
+            android:noHistory="true"
+            android:theme="@style/SplashTheme">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -31,10 +31,9 @@
         </activity>
         <activity
             android:name=".ReservationsActivity"
-            android:label="@string/title_activity_reservations">
-        </activity>
+            android:configChanges="orientation|keyboardHidden"
+            android:screenOrientation="portrait" />
         <activity android:name=".ResponseActivity" />
-
     </application>
 
 </manifest>

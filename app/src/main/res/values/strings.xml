@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">ArrowheadDemo</string>
-    <string name="title_activity_reservations">Map</string>
     <string name="car_type">Car type:</string>
     <string name="licence_plate_number">Licence plate number</string>
     <string name="set_time">SET TIME</string>

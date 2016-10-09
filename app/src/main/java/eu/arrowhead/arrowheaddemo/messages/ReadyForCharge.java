@@ -30,5 +30,5 @@ public class ReadyForCharge {
         this.stateOfCharge = stateOfCharge;
     }
 
-    
+
 }
