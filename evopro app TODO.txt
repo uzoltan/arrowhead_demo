@@ -1,0 +1,29 @@
+ahol lesz a demo
+43.781867, 11.248857
+
+KINÉZET:
+map majdnem az egész képernyõt betölti, csak alul van hely 2 gombnak, úgy hogy 1 sorban elférjenek. RESERVE CHARGING, READY TO CHARGE.
+Az utóbbi szürkén disabled, amíg nincs elfogadott foglalás.
+Map jobb alsó sarkában van a FAB, ahol userID-s ikon és autó van, autós dialogban rendszámot és kocsi típust lehet megadni
+Map bal alsó sarkában "Go to my location" google button van (ha sikerül, amúgy jobb felsõ marad)
+RESERVE CHARGING-ra nyomás után elõször egy Time picker dialog ugrik fel, amin a latestStopTime-ot kell megadni (http://stackoverflow.com/questions/31976707/how-to-set-a-custom-title-on-time-picker).
+
+dialogfragmentekhez https://developer.android.com/guide/topics/ui/dialogs.html
+
+Map teendõk:
+public abstract boolean onMarkerClick (Marker marker) implementálása, és marker location elmentése
+mapen kattintható markerek, és legyen kijelezve a user helyzete is, markerekkel vonalon összekötve a user helyzete, távolságot kiírni rajta
+mapet ide gombára rakni ideiglenesen és my location cuccon meg polyline-on dolgozni + aktív marker lekérdezése?
+ez is hasznos lehet majd: http://stackoverflow.com/questions/14489880/change-position-of-google-maps-apis-my-location-button
+http://stackoverflow.com/questions/14694119/how-to-add-buttons-at-top-of-map-fragment-api-v2-layout
+
+még kérdés a reserve chargingra visszajövõ válasz kinézete
+
+user inputok és ready to charge disablehöz sharedpreferencesek használata
+
+ÁTÁLLNI sima android FABre ceruza ikonnal, ami egy fragmentet hoz fel, ahol userID és rendszám adható meg
+reservenél latestStopTime idõt állítunk be küldés elõtt, ready to chargenál SoC-ot vagyis current töltöttség és minTargetet. spinner maybe?
+
+meggyõzõdni arról, hogy az app tableten és mobilon is jól néz ki, tableten mindkét orientációban
+
+server url megadásához fab longclick elrejtése (tetszõlegesen hosszú long click): http://stackoverflow.com/questions/7934245/longclick-event-happens-too-quickly-how-can-i-increase-the-clicktime-required-t

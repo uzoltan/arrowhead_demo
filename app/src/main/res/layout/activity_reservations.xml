@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_margin="5dp"
     android:orientation="vertical">
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
@@ -12,74 +13,13 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_margin="5dp"
-        android:layout_weight="1"
-        tools:context="eu.arrowhead.arrowheaddemo.ReservationsActivity" />
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_margin="5dp"
-        android:layout_weight="1"
-        android:descendantFocusability="beforeDescendants"
-        android:focusableInTouchMode="true"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/car_type_textview"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/car_type"
-            android:textSize="20sp" />
-
-        <Spinner
-            android:id="@+id/car_type_spinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toEndOf="@id/car_type_textview" />
-
-        <android.support.design.widget.TextInputLayout
-            android:id="@+id/licence_plate_input"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/car_type_spinner">
-
-            <EditText
-                android:id="@+id/licence_plate_edittext"
-                android:layout_width="250dp"
-                android:layout_height="wrap_content"
-                android:hint="@string/licence_plate_number"
-                android:maxLines="1"
-                android:textSize="20sp" />
-        </android.support.design.widget.TextInputLayout>
-
-        <Button
-            android:id="@+id/set_time_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/licence_plate_input"
-            android:text="@string/set_time"
-            android:textSize="20sp" />
-
-        <Button
-            android:id="@+id/send_request_button"
-            style="@style/Button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_centerHorizontal="true"
-            android:layout_marginBottom="12dp"
-            android:padding="12dp"
-            android:text="@string/send_request"
-            android:textSize="25sp"
-            android:textStyle="bold" />
+        android:layout_weight="5.8"
+        tools:context="eu.arrowhead.arrowheaddemo.ReservationsActivity">
 
         <com.getbase.floatingactionbutton.FloatingActionsMenu
             android:id="@+id/fab_with_subactions"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
             android:layout_marginEnd="11dp"
             fab:fab_addButtonColorNormal="@color/colorAccent"
             fab:fab_addButtonColorPressed="@color/colorAccentPressed"
@@ -111,6 +51,44 @@
 
         </com.getbase.floatingactionbutton.FloatingActionsMenu>
 
-    </RelativeLayout>
+    </fragment>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/reserve_charging_button"
+            style="@style/Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:text="@string/reserve_charging"
+            android:textSize="23sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/ready_to_charge_button"
+            style="@style/Button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="10dp"
+            android:layout_weight="1"
+            android:padding="12dp"
+            android:text="@string/ready_to_charge"
+            android:textSize="23sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 
 </LinearLayout>

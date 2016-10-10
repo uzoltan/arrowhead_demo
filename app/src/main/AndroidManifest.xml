@@ -29,10 +29,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".ReservationsActivity"
-            android:configChanges="orientation|keyboardHidden"
-            android:screenOrientation="portrait" />
+        <activity android:name=".ReservationsActivity" />
         <activity android:name=".ResponseActivity" />
     </application>
 
