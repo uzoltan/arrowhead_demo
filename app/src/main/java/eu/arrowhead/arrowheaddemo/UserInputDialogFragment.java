@@ -11,9 +11,9 @@ import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 
-public class UserIdDialogFragment extends DialogFragment {
+public class UserInputDialogFragment extends DialogFragment {
 
-    public static final String TAG = "UserIdDialogFragment";
+    public static final String TAG = "UserInputDialogFragment";
 
     /* The activity that creates an instance of this dialog fragment must
     * implement this interface in order to receive event callbacks.
@@ -36,23 +36,23 @@ public class UserIdDialogFragment extends DialogFragment {
 
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
-        builder.setView(inflater.inflate(R.layout.dialog_add_user_id, null))
+        builder.setView(inflater.inflate(R.layout.dialog_user_input, null))
                 // Add action buttons
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
                         // Send the positive button event back to the host activity
-                        mListener.onDialogPositiveClick(UserIdDialogFragment.this);
+                        mListener.onDialogPositiveClick(UserInputDialogFragment.this);
                     }
                 })
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // Send the negative button event back to the host activity
-                        mListener.onDialogNegativeClick(UserIdDialogFragment.this);
+                        mListener.onDialogNegativeClick(UserInputDialogFragment.this);
                     }
                 });
 
-        builder.setTitle(R.string.user_id_dialog_title);
+        builder.setTitle(R.string.user_input_dialog_title);
         return builder.create();
     }
 

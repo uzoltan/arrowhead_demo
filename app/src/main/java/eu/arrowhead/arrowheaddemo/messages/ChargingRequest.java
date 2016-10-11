@@ -13,11 +13,11 @@ public class ChargingRequest {
     public ChargingRequest() {
     }
 
-    public ChargingRequest(String EVId, Date latestStopTime, Location location, String userId) {
+    public ChargingRequest(String userId, String EVId, Date latestStopTime, Location location) {
+        this.userId = userId;
         this.EVId = EVId;
         this.latestStopTime = latestStopTime;
         this.location = location;
-        this.userId = userId;
     }
 
     public String getUserId() {

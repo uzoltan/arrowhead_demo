@@ -10,5 +10,6 @@
     <string name="ready_to_charge">READY TO\nCHARGE</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
-    <string name="user_id_dialog_title">Add User ID</string>
+    <string name="user_input_dialog_title">Necessary user inputs</string>
+    <string name="licence_plate">Licence plate</string>
 </resources>

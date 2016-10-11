@@ -1,11 +1,12 @@
 package eu.arrowhead.arrowheaddemo;
 
 
-import android.content.Intent;
-
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -15,11 +16,17 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class ReservationsActivity extends FragmentActivity implements OnMapReadyCallback, UserIdDialogFragment.UserIdDialogListener {
+import eu.arrowhead.arrowheaddemo.messages.ChargingRequest;
+import eu.arrowhead.arrowheaddemo.messages.Location;
 
-    private com.getbase.floatingactionbutton.FloatingActionButton carFab;
+public class ReservationsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
+        UserInputDialogFragment.UserIdDialogListener {
+
+    private Location selectedMarkerLocation;
+    private SharedPreferences prefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,13 +37,13 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        com.getbase.floatingactionbutton.FloatingActionButton userIdFab =
-                (com.getbase.floatingactionbutton.FloatingActionButton) findViewById(R.id.add_user_id_fab);
-        userIdFab.setOnClickListener(new View.OnClickListener() {
+        //Setting up the user input FAB
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.user_input_fab);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                DialogFragment newFragment = new UserIdDialogFragment();
-                newFragment.show(getSupportFragmentManager(), UserIdDialogFragment.TAG);
+            public void onClick(View view) {
+                DialogFragment newFragment = new UserInputDialogFragment();
+                newFragment.show(getSupportFragmentManager(), UserInputDialogFragment.TAG);
             }
         });
 
@@ -46,10 +53,25 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
 
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(ReservationsActivity.this, ResponseActivity.class);
-                startActivity(intent);
+                DialogFragment newFragment = new TimePickerFragment();
+                newFragment.show(getSupportFragmentManager(), TimePickerFragment.TAG);
+
+                ChargingRequest request = compileChargingRequest();
+
+                Toast.makeText(ReservationsActivity.this, "Sending Request...", Toast.LENGTH_LONG).show();
             }
         });
+
+        prefs = this.getSharedPreferences("eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
+    }
+
+    public ChargingRequest compileChargingRequest(){
+        String userId = prefs.getString("userId", "");
+        String EVId = prefs.getString("EVId", "");
+
+        //TODO dátum ebben a formátumban YYYY-MM-DDTHH:MM:SS+HH:MM
+
+        return new ChargingRequest(userId, EVId, null, selectedMarkerLocation);
     }
 
 
@@ -84,5 +106,13 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
     @Override
     public void onDialogNegativeClick(DialogFragment dialog) {
         dialog.getDialog().cancel();
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        LatLng latlng = marker.getPosition();
+        selectedMarkerLocation = new Location(latlng.latitude, latlng.longitude);
+
+        return true;
     }
 }

@@ -1,7 +1,7 @@
 package eu.arrowhead.arrowheaddemo.messages;
 
 
-class Location {
+public class Location {
 
     private Double latitude;
     private Double longitude;
