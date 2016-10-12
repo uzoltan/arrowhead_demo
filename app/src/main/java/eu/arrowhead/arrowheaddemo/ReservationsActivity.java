@@ -22,12 +22,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import org.threeten.bp.ZonedDateTime;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 import eu.arrowhead.arrowheaddemo.messages.ChargingRequest;
 import eu.arrowhead.arrowheaddemo.messages.Location;
@@ -128,6 +127,7 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         dialog.getDialog().cancel();
     }
 
+    //Callback method for a marker click on the map, saving the location
     @Override
     public boolean onMarkerClick(Marker marker) {
         LatLng latlng = marker.getPosition();
@@ -135,9 +135,11 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         return false;
     }
 
+    //Callback method for the TimePickerDialog
+    //Here we send the charging request with all the necessary information
     @Override
     public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
-        /*Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance();
 
         //User entered a time, which is already happened today so we assume it's on tomorrow
         if(cal.get(Calendar.HOUR_OF_DAY) > hourOfDay ||
@@ -147,8 +149,9 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
         cal.set(Calendar.MINUTE, minute);
         cal.set(Calendar.SECOND, 0);
-        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-DD HH:MM:SS+HH:MM");
+        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
         String time = cal.getTime().toString();
+        Log.i("date test", time);
         Date latestStopTime = new Date();
         try {
             latestStopTime = sdf.parse(time);
@@ -156,9 +159,12 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
             Log.i("date test", "ERROR");
             e.printStackTrace();
         }
-        Log.i("date test", latestStopTime.toString());*/
-        ZonedDateTime zdt = ZonedDateTime.now();
-        Log.i("datetest", zdt.toString());
+        Log.i("date test", latestStopTime.toString());
+
+        sdf.applyPattern("YYYY-MM-dd'T'HH:MM:SSXXX");
+        String finalTime = sdf.format(latestStopTime);
+        Log.i("date test", finalTime);
+
         //TODO kiválasztott időre valami sanity check
         ChargingRequest request = compileChargingRequest();
 
