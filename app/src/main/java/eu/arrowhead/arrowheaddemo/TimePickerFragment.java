@@ -1,10 +1,10 @@
 package eu.arrowhead.arrowheaddemo;
 
 
+import android.app.Activity;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
@@ -13,9 +13,15 @@ import android.widget.TimePicker;
 
 import java.util.Calendar;
 
-public class TimePickerFragment extends DialogFragment implements TimePickerDialog.OnTimeSetListener {
+public class TimePickerFragment extends DialogFragment implements TimePickerDialog.OnTimeSetListener{
 
     public static final String TAG = "TimePickerFragment";
+
+    public interface TimePickerListener {
+        public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute);
+    }
+
+    TimePickerListener mListener;
 
     @NonNull
     @Override
@@ -31,10 +37,24 @@ public class TimePickerFragment extends DialogFragment implements TimePickerDial
     }
 
     @Override
-    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-        SharedPreferences prefs = getActivity().getSharedPreferences(
-                "eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
-        prefs.edit().putInt("targetHour", hourOfDay).apply();
-        prefs.edit().putInt("targetMinute", minute).apply();
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        Activity activity = getActivity();
+        // Verify that the host activity implements the callback interface
+        try {
+            mListener = (TimePickerListener) activity;
+        } catch (ClassCastException e) {
+            // The activity doesn't implement the interface, throw exception
+            throw new ClassCastException(activity.toString()
+                    + " must implement TimePickerListener");
+        }
     }
+
+    @Override
+    public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
+        mListener.onTimeSet(timePicker, hourOfDay, minute);
+    }
+
+
 }

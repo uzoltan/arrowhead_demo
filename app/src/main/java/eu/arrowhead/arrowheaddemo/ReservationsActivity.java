@@ -7,8 +7,11 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -19,14 +22,22 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.threeten.bp.ZonedDateTime;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+
 import eu.arrowhead.arrowheaddemo.messages.ChargingRequest;
 import eu.arrowhead.arrowheaddemo.messages.Location;
 
 public class ReservationsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
-        UserInputDialogFragment.UserIdDialogListener {
+        UserInputDialogFragment.UserIdDialogListener, TimePickerFragment.TimePickerListener {
 
-    private Location selectedMarkerLocation;
     private SharedPreferences prefs;
+    private Location selectedMarkerLocation;
+    private String userId, EVId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,27 +64,28 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
 
             @Override
             public void onClick(View v) {
-                DialogFragment newFragment = new TimePickerFragment();
-                newFragment.show(getSupportFragmentManager(), TimePickerFragment.TAG);
+                userId = prefs.getString("userId", null);
+                EVId = prefs.getString("EVId", null);
 
-                ChargingRequest request = compileChargingRequest();
+                if(userId == null || userId.isEmpty()){
+                    Toast.makeText(ReservationsActivity.this, R.string.no_user_id_warning, Toast.LENGTH_LONG).show();
+                }
+                else if(EVId == null || EVId.isEmpty()){
+                    Toast.makeText(ReservationsActivity.this, R.string.no_ev_id_warning, Toast.LENGTH_LONG).show();
+                }
+                else if(selectedMarkerLocation == null){
+                    Toast.makeText(ReservationsActivity.this, R.string.no_charging_station_warning, Toast.LENGTH_LONG).show();
+                }
+                else{
+                    DialogFragment newFragment = new TimePickerFragment();
+                    newFragment.show(getSupportFragmentManager(), TimePickerFragment.TAG);
+                }
 
-                Toast.makeText(ReservationsActivity.this, "Sending Request...", Toast.LENGTH_LONG).show();
             }
         });
 
         prefs = this.getSharedPreferences("eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
     }
-
-    public ChargingRequest compileChargingRequest(){
-        String userId = prefs.getString("userId", "");
-        String EVId = prefs.getString("EVId", "");
-
-        //TODO dátum ebben a formátumban YYYY-MM-DDTHH:MM:SS+HH:MM
-
-        return new ChargingRequest(userId, EVId, null, selectedMarkerLocation);
-    }
-
 
     /**
      * Manipulates the map once available.
@@ -87,20 +99,28 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(43.782391, 11.250345)));
         googleMap.animateCamera(CameraUpdateFactory.zoomTo(15.0f));
 
-        //A few charging stations in Florence
-        LatLng chargingStation1 = new LatLng(43.780349, 11.253357);
-        LatLng chargingStation2 = new LatLng(43.783184, 11.254752);
-        LatLng chargingStation3 = new LatLng(43.786662, 11.250310);
-
+        //Placing 2 markers on the map, representing the 2 charging stations
+        LatLng chargingStation1 = new LatLng(43.778428, 11.250622);
+        LatLng chargingStation2 = new LatLng(43.786662, 11.250310);
         googleMap.addMarker(new MarkerOptions().position(chargingStation1).title("Charging station 1"));
         googleMap.addMarker(new MarkerOptions().position(chargingStation2).title("Charging Station 2"));
-        googleMap.addMarker(new MarkerOptions().position(chargingStation3).title("Charging Station 3"));
+        googleMap.setOnMarkerClickListener((GoogleMap.OnMarkerClickListener) this);
     }
 
-
+    //Callback methods for the UserInputDialog
     @Override
     public void onDialogPositiveClick(DialogFragment dialog) {
-        Toast.makeText(ReservationsActivity.this, "Yaay it works", Toast.LENGTH_LONG).show();
+        EditText userId = (EditText) dialog.getDialog().findViewById(R.id.user_id_edittext);
+        EditText EVId = (EditText) dialog.getDialog().findViewById(R.id.licence_plate_edittext);
+
+        if(!userId.getText().toString().isEmpty()){
+            prefs.edit().putString("userId", userId.getText().toString()).apply();
+        }
+        if(!EVId.getText().toString().isEmpty()){
+            prefs.edit().putString("EVId", EVId.getText().toString()).apply();
+        }
+
+        Toast.makeText(ReservationsActivity.this, R.string.saved, Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -112,7 +132,43 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
     public boolean onMarkerClick(Marker marker) {
         LatLng latlng = marker.getPosition();
         selectedMarkerLocation = new Location(latlng.latitude, latlng.longitude);
-
-        return true;
+        return false;
     }
+
+    @Override
+    public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
+        /*Calendar cal = Calendar.getInstance();
+
+        //User entered a time, which is already happened today so we assume it's on tomorrow
+        if(cal.get(Calendar.HOUR_OF_DAY) > hourOfDay ||
+                (cal.get(Calendar.HOUR_OF_DAY) == hourOfDay && cal.get(Calendar.MINUTE) > minute)){
+            cal.add(Calendar.DATE, 1);
+        }
+        cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        cal.set(Calendar.MINUTE, minute);
+        cal.set(Calendar.SECOND, 0);
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-DD HH:MM:SS+HH:MM");
+        String time = cal.getTime().toString();
+        Date latestStopTime = new Date();
+        try {
+            latestStopTime = sdf.parse(time);
+        } catch (ParseException e) {
+            Log.i("date test", "ERROR");
+            e.printStackTrace();
+        }
+        Log.i("date test", latestStopTime.toString());*/
+        ZonedDateTime zdt = ZonedDateTime.now();
+        Log.i("datetest", zdt.toString());
+        //TODO kiválasztott időre valami sanity check
+        ChargingRequest request = compileChargingRequest();
+
+        Toast.makeText(ReservationsActivity.this, "Sending Request...", Toast.LENGTH_LONG).show();
+    }
+
+    public ChargingRequest compileChargingRequest(){
+        //TODO dátum ebben a formátumban YYYY-MM-DDTHH:MM:SS+HH:MM
+        return new ChargingRequest(userId, EVId, null, selectedMarkerLocation);
+    }
+
+
 }

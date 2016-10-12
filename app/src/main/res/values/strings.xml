@@ -12,4 +12,8 @@
     <string name="cancel">Cancel</string>
     <string name="user_input_dialog_title">Necessary user inputs</string>
     <string name="licence_plate">Licence plate</string>
+    <string name="no_user_id_warning">Can not send charging request without a user ID. Please make sure you set one.</string>
+    <string name="no_ev_id_warning">Can not send charging request without a licence plate. Please make sure you set one.</string>
+    <string name="no_charging_station_warning">Please select a charging station first.</string>
+    <string name="saved">Saved</string>
 </resources>

@@ -5,11 +5,14 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.EditText;
 
 public class UserInputDialogFragment extends DialogFragment {
 
@@ -20,7 +23,6 @@ public class UserInputDialogFragment extends DialogFragment {
     * Each method passes the DialogFragment in case the host needs to query it. */
     public interface UserIdDialogListener {
         public void onDialogPositiveClick(DialogFragment dialog);
-
         public void onDialogNegativeClick(DialogFragment dialog);
     }
 
@@ -36,7 +38,8 @@ public class UserInputDialogFragment extends DialogFragment {
 
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
-        builder.setView(inflater.inflate(R.layout.dialog_user_input, null))
+        View view = inflater.inflate(R.layout.dialog_user_input, null);
+        builder.setView(view)
                 // Add action buttons
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
@@ -51,8 +54,23 @@ public class UserInputDialogFragment extends DialogFragment {
                         mListener.onDialogNegativeClick(UserInputDialogFragment.this);
                     }
                 });
-
         builder.setTitle(R.string.user_input_dialog_title);
+
+        //Fill in the EditTexts with saved values
+        SharedPreferences prefs = getActivity().getSharedPreferences("eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
+        String userId = prefs.getString("userId", null);
+        if(userId != null && !userId.isEmpty()){
+            EditText userIdField = (EditText) view.findViewById(R.id.user_id_edittext);
+            userIdField.setText(userId);
+            int position = userId.length();
+            userIdField.setSelection(position);
+        }
+        String EVId = prefs.getString("EVId", null);
+        if(EVId != null && !EVId.isEmpty()){
+            EditText EVIdField = (EditText) view.findViewById(R.id.licence_plate_edittext);
+            EVIdField.setText(EVId);
+        }
+
         return builder.create();
     }
 
