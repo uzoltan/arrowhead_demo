@@ -7,13 +7,16 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -22,21 +25,21 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import eu.arrowhead.arrowheaddemo.messages.ChargingRequest;
+import eu.arrowhead.arrowheaddemo.Utility.Utility;
+import eu.arrowhead.arrowheaddemo.messages.ChargingResponse;
 import eu.arrowhead.arrowheaddemo.messages.Location;
 
 public class ReservationsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
-        UserInputDialogFragment.UserIdDialogListener, TimePickerFragment.TimePickerListener {
+        UserInputFragment.UserIdDialogListener, TimePickerFragment.TimePickerListener, ReadyToChargeFragment.ReadyToChargeListener {
 
     private SharedPreferences prefs;
     private Location selectedMarkerLocation;
     private String userId, EVId;
+
+    private static String BASE_URL = "something";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,34 +55,51 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                DialogFragment newFragment = new UserInputDialogFragment();
-                newFragment.show(getSupportFragmentManager(), UserInputDialogFragment.TAG);
+                DialogFragment newFragment = new UserInputFragment();
+                newFragment.show(getSupportFragmentManager(), UserInputFragment.TAG);
             }
         });
 
         //Setting up the "Reserve Charging" button
-        Button sendRequest = (Button) findViewById(R.id.reserve_charging_button);
-        sendRequest.setOnClickListener(new Button.OnClickListener() {
-
+        Button reserveCharging = (Button) findViewById(R.id.reserve_charging_button);
+        reserveCharging.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
-                userId = prefs.getString("userId", null);
-                EVId = prefs.getString("EVId", null);
-
-                if(userId == null || userId.isEmpty()){
-                    Toast.makeText(ReservationsActivity.this, R.string.no_user_id_warning, Toast.LENGTH_LONG).show();
-                }
-                else if(EVId == null || EVId.isEmpty()){
-                    Toast.makeText(ReservationsActivity.this, R.string.no_ev_id_warning, Toast.LENGTH_LONG).show();
-                }
-                else if(selectedMarkerLocation == null){
-                    Toast.makeText(ReservationsActivity.this, R.string.no_charging_station_warning, Toast.LENGTH_LONG).show();
+                if(!Utility.isConnected(ReservationsActivity.this)){
+                    Toast.makeText(ReservationsActivity.this, R.string.no_internet_warning, Toast.LENGTH_LONG).show();
                 }
                 else{
-                    DialogFragment newFragment = new TimePickerFragment();
-                    newFragment.show(getSupportFragmentManager(), TimePickerFragment.TAG);
-                }
+                    userId = prefs.getString("userId", null);
+                    EVId = prefs.getString("EVId", null);
 
+                    if(userId == null || userId.isEmpty()){
+                        Toast.makeText(ReservationsActivity.this, R.string.no_user_id_warning, Toast.LENGTH_LONG).show();
+                    }
+                    else if(EVId == null || EVId.isEmpty()){
+                        Toast.makeText(ReservationsActivity.this, R.string.no_ev_id_warning, Toast.LENGTH_LONG).show();
+                    }
+                    else if(selectedMarkerLocation == null){
+                        Toast.makeText(ReservationsActivity.this, R.string.no_charging_station_warning, Toast.LENGTH_LONG).show();
+                    }
+                    else{
+                        DialogFragment newFragment = new TimePickerFragment();
+                        newFragment.show(getSupportFragmentManager(), TimePickerFragment.TAG);
+                    }
+                }
+            }
+        });
+
+        Button readyToCharge = (Button) findViewById(R.id.ready_to_charge_button);
+        readyToCharge.setOnClickListener(new Button.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(!Utility.isConnected(ReservationsActivity.this)){
+                    Toast.makeText(ReservationsActivity.this, R.string.no_internet_warning, Toast.LENGTH_LONG).show();
+                }
+                else{
+                    DialogFragment newFragment = new ReadyToChargeFragment();
+                    newFragment.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
+                }
             }
         });
 
@@ -106,7 +126,7 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         googleMap.setOnMarkerClickListener((GoogleMap.OnMarkerClickListener) this);
     }
 
-    //Callback methods for the UserInputDialog
+    //Callback methods for the UserInputFragment
     @Override
     public void onDialogPositiveClick(DialogFragment dialog) {
         EditText userId = (EditText) dialog.getDialog().findViewById(R.id.user_id_edittext);
@@ -119,7 +139,10 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
             prefs.edit().putString("EVId", EVId.getText().toString()).apply();
         }
 
-        Toast.makeText(ReservationsActivity.this, R.string.saved, Toast.LENGTH_SHORT).show();
+        //Show a "Saved" toast if we actually saved at least one input
+        if(!userId.getText().toString().isEmpty() || !EVId.getText().toString().isEmpty()){
+            Toast.makeText(ReservationsActivity.this, R.string.saved, Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
@@ -135,46 +158,116 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         return false;
     }
 
-    //Callback method for the TimePickerDialog
+    //Callback method for the TimePickerFragment
     //Here we send the charging request with all the necessary information
     @Override
     public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
-        Calendar cal = Calendar.getInstance();
+        //TODO some kind of sanity check on the selected time?
 
-        //User entered a time, which is already happened today so we assume it's on tomorrow
-        if(cal.get(Calendar.HOUR_OF_DAY) > hourOfDay ||
-                (cal.get(Calendar.HOUR_OF_DAY) == hourOfDay && cal.get(Calendar.MINUTE) > minute)){
-            cal.add(Calendar.DATE, 1);
-        }
-        cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
-        cal.set(Calendar.MINUTE, minute);
-        cal.set(Calendar.SECOND, 0);
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
-        String time = cal.getTime().toString();
-        Log.i("date test", time);
-        Date latestStopTime = new Date();
+        String latestStopTime = Utility.createLatestStopTime(hourOfDay, minute);
+        JSONObject requestPayload = null;
         try {
-            latestStopTime = sdf.parse(time);
-        } catch (ParseException e) {
-            Log.i("date test", "ERROR");
+            requestPayload = compileChargingRequestPayload(latestStopTime);
+        } catch (JSONException e) {
             e.printStackTrace();
         }
-        Log.i("date test", latestStopTime.toString());
 
-        sdf.applyPattern("YYYY-MM-dd'T'HH:MM:SSXXX");
-        String finalTime = sdf.format(latestStopTime);
-        Log.i("date test", finalTime);
+        /*JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                (Request.Method.POST, BASE_URL, requestPayload,
+                        new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response){
+                                ChargingResponse chargingResponse = Utility.fromJsonObject(response.toString(), ChargingResponse.class);
+                                prefs.edit().putLong("chargingReqId", chargingResponse.getChargingReqId()).apply();
+                                ChargingResponseFragment newFragment =
+                                        ChargingResponseFragment.newInstance(chargingResponse.getChargingReqId(), chargingResponse.getStatus());
+                                newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
+                            }},
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Toast.makeText(ReservationsActivity.this,
+                                        "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                            }}
+                );*/
 
-        //TODO kiválasztott időre valami sanity check
-        ChargingRequest request = compileChargingRequest();
+        //TODO remove the test fragment when BASE_URL is known
+        String status = "Accepted";
+        long id = 564131245;
+        ChargingResponseFragment newFragment = ChargingResponseFragment.newInstance(id, status);
+        newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
 
-        Toast.makeText(ReservationsActivity.this, "Sending Request...", Toast.LENGTH_LONG).show();
+        Toast.makeText(ReservationsActivity.this, R.string.request_sent, Toast.LENGTH_SHORT).show();
     }
 
-    public ChargingRequest compileChargingRequest(){
-        //TODO dátum ebben a formátumban YYYY-MM-DDTHH:MM:SS+HH:MM
-        return new ChargingRequest(userId, EVId, null, selectedMarkerLocation);
+    public JSONObject compileChargingRequestPayload(String latestStopTime) throws JSONException {
+        JSONObject location = new JSONObject();
+        location.put("longitude", selectedMarkerLocation.getLongitude());
+        location.put("latitude", selectedMarkerLocation.getLatitude());
+
+        JSONObject chargingRequest = new JSONObject();
+        chargingRequest.put("userId", userId);
+        chargingRequest.put("EVId", EVId);
+        chargingRequest.put("latestStopTime", latestStopTime);
+        chargingRequest.put("location", location);
+        return chargingRequest;
     }
 
 
+    //Callback methods for the ReadyToChargeFragment
+    @Override
+    public void onDialogOkClick(DialogFragment dialog) {
+        EditText currentChargeText = (EditText) dialog.getDialog().findViewById(R.id.current_charge_edittext);
+        EditText minTargetText = (EditText) dialog.getDialog().findViewById(R.id.min_charge_target_edittext);
+
+        if(currentChargeText.getText().toString().isEmpty() || minTargetText.getText().toString().isEmpty()){
+            Toast.makeText(ReservationsActivity.this, R.string.empty_imput_field_warning, Toast.LENGTH_LONG).show();
+        }
+        else{
+            double currentCharge = Double.parseDouble(currentChargeText.getText().toString());
+            double minTarget = Double.parseDouble(minTargetText.getText().toString());
+            long chargingReqId = prefs.getLong("chargingReqId", 0);
+            String URL = BASE_URL + "/" + String.valueOf(chargingReqId);
+            JSONObject requestPayload = null;
+            try {
+                requestPayload = compileReadyToChargePayload(chargingReqId, currentCharge, minTarget);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+        /*JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                (Request.Method.POST, URL, requestPayload,
+                        new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject response){
+                                Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+                            }},
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Toast.makeText(ReservationsActivity.this,
+                                        "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                            }}
+                );*/
+
+            //TODO remove this when request sending works
+            Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onDialogCancelClick(DialogFragment dialog) {
+        dialog.getDialog().cancel();
+    }
+
+    public JSONObject compileReadyToChargePayload( long chargingReqId, double currentCharge, double minTarget) throws JSONException {
+        JSONObject stateOfCharge = new JSONObject();
+        stateOfCharge.put("current", currentCharge);
+        stateOfCharge.put("minTarget", minTarget);
+
+        JSONObject readyToCharge = new JSONObject();
+        readyToCharge.put("chargingReqId", chargingReqId);
+        readyToCharge.put("stateOfCharge", stateOfCharge);
+        return readyToCharge;
+    }
 }

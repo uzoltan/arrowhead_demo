@@ -16,4 +16,11 @@
     <string name="no_ev_id_warning">Can not send charging request without a licence plate. Please make sure you set one.</string>
     <string name="no_charging_station_warning">Please select a charging station first.</string>
     <string name="saved">Saved</string>
+    <string name="no_internet_warning">Please make sure you have internet connection!</string>
+    <string name="request_sent">Request sent…</string>
+    <string name="charging_req_response">ChargingRequest response</string>
+    <string name="current_charge">Current charge (%)</string>
+    <string name="min_charge_target">Min charge target (%)</string>
+    <string name="cpms_accepted_request">CPMS accepted the request</string>
+    <string name="empty_imput_field_warning">You can not leave the input field(s) empty.</string>
 </resources>

@@ -6,4 +6,5 @@
     <color name="colorAccentPressed">#FF6F00</color>
     <color name="SecondaryBackgroundColor">#E8EAF6</color>
     <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
 </resources>

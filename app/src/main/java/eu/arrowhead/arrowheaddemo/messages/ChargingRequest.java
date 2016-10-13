@@ -7,13 +7,13 @@ public class ChargingRequest {
 
     private String userId;
     private String EVId;
-    private Date latestStopTime;
+    private String latestStopTime;
     private Location location;
 
     public ChargingRequest() {
     }
 
-    public ChargingRequest(String userId, String EVId, Date latestStopTime, Location location) {
+    public ChargingRequest(String userId, String EVId, String latestStopTime, Location location) {
         this.userId = userId;
         this.EVId = EVId;
         this.latestStopTime = latestStopTime;
@@ -36,11 +36,11 @@ public class ChargingRequest {
         this.EVId = EVId;
     }
 
-    public Date getLatestStopTime() {
+    public String getLatestStopTime() {
         return latestStopTime;
     }
 
-    public void setLatestStopTime(Date latestStopTime) {
+    public void setLatestStopTime(String latestStopTime) {
         this.latestStopTime = latestStopTime;
     }
 

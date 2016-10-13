@@ -7,7 +7,12 @@ import android.net.NetworkInfo;
 
 import com.google.gson.Gson;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 
 public final class Utility {
@@ -33,6 +38,23 @@ public final class Utility {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = cm.getActiveNetworkInfo();
         return networkInfo != null && networkInfo.isConnected();
+    }
+
+    public static String createLatestStopTime(int hourOfDay, int minute){
+        Calendar cal = Calendar.getInstance();
+
+        //User entered a time, which is already happened today so we assume it's on tomorrow
+        if(cal.get(Calendar.HOUR_OF_DAY) > hourOfDay ||
+                (cal.get(Calendar.HOUR_OF_DAY) == hourOfDay && cal.get(Calendar.MINUTE) > minute)){
+            cal.add(Calendar.DATE, 1);
+        }
+        cal.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        cal.set(Calendar.MINUTE, minute);
+        cal.set(Calendar.SECOND, 0);
+
+        //DEFAULT FORMAT: "EEE MMM dd HH:mm:ss z yyyy"
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd'T'HH:MM:SSXXX", Locale.US);
+        return sdf.format(cal.getTime());
     }
 
 

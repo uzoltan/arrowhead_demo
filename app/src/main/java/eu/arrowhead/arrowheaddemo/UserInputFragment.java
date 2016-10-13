@@ -14,9 +14,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 
-public class UserInputDialogFragment extends DialogFragment {
+public class UserInputFragment extends DialogFragment {
 
-    public static final String TAG = "UserInputDialogFragment";
+    public static final String TAG = "UserInputFragment";
 
     /* The activity that creates an instance of this dialog fragment must
     * implement this interface in order to receive event callbacks.
@@ -45,13 +45,13 @@ public class UserInputDialogFragment extends DialogFragment {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
                         // Send the positive button event back to the host activity
-                        mListener.onDialogPositiveClick(UserInputDialogFragment.this);
+                        mListener.onDialogPositiveClick(UserInputFragment.this);
                     }
                 })
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         // Send the negative button event back to the host activity
-                        mListener.onDialogNegativeClick(UserInputDialogFragment.this);
+                        mListener.onDialogNegativeClick(UserInputFragment.this);
                     }
                 });
         builder.setTitle(R.string.user_input_dialog_title);
