@@ -3,6 +3,7 @@ package eu.arrowhead.arrowheaddemo.messages;
 
 public class ChargingResponse {
 
+    //TODO String ID
     private long chargingReqId;
     private String status;
 

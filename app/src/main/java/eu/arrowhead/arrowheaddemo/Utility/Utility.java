@@ -4,6 +4,7 @@ package eu.arrowhead.arrowheaddemo.Utility;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.util.Log;
 
 import com.google.gson.Gson;
 
@@ -53,7 +54,8 @@ public final class Utility {
         cal.set(Calendar.SECOND, 0);
 
         //DEFAULT FORMAT: "EEE MMM dd HH:mm:ss z yyyy"
-        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd'T'HH:MM:SSXXX", Locale.US);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:MM:SSZZZZ", Locale.getDefault());
+        Log.i("date_test", sdf.format(cal.getTime()));
         return sdf.format(cal.getTime());
     }
 
