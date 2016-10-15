@@ -12,6 +12,7 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -37,8 +38,6 @@ import eu.arrowhead.arrowheaddemo.Utility.Networking;
 import eu.arrowhead.arrowheaddemo.Utility.PermissionUtils;
 import eu.arrowhead.arrowheaddemo.Utility.Utility;
 import eu.arrowhead.arrowheaddemo.messages.ChargingResponse;
-import eu.arrowhead.arrowheaddemo.messages.Location;
-import eu.arrowhead.arrowheaddemo.messages.ReadyForCharge;
 
 import static eu.arrowhead.arrowheaddemo.R.id.map;
 
@@ -46,14 +45,16 @@ public class ReservationsActivity extends FragmentActivity implements
         OnMapReadyCallback,
         UserInputFragment.UserIdDialogListener,
         TimePickerFragment.TimePickerListener,
-        ReadyToChargeFragment.ReadyToChargeListener {
+        ReadyToChargeFragment.ReadyToChargeListener,
+        ServerEndpointFragment.ServerEndpointListener{
 
     private SharedPreferences prefs;
-    private Location appointedChargerLocation;
     private String userId, EVId;
     private GoogleMap mMap;
+    private Marker marker;
+    private Button reserveCharging, readyToCharge;
 
-    private static String BASE_URL = "something";
+    private static String BASE_URL;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean mPermissionDenied = false;
 
@@ -76,8 +77,26 @@ public class ReservationsActivity extends FragmentActivity implements
             }
         });
 
+        fab.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                long timeInstance = 0;
+                if(event.getAction() == MotionEvent.ACTION_DOWN){
+                    timeInstance = (Long) System.currentTimeMillis();
+                }
+                else if(event.getAction() == MotionEvent.ACTION_UP){
+                    if(((Long) System.currentTimeMillis() - timeInstance) > 1500){
+                        DialogFragment newFragment = new ServerEndpointFragment();
+                        newFragment.show(getSupportFragmentManager(), ServerEndpointFragment.TAG);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+
         //Setting up the "Reserve Charging" button
-        Button reserveCharging = (Button) findViewById(R.id.reserve_charging_button);
+        reserveCharging = (Button) findViewById(R.id.reserve_charging_button);
         reserveCharging.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -102,7 +121,7 @@ public class ReservationsActivity extends FragmentActivity implements
             }
         });
 
-        Button readyToCharge = (Button) findViewById(R.id.ready_to_charge_button);
+        readyToCharge = (Button) findViewById(R.id.ready_to_charge_button);
         readyToCharge.setOnClickListener(new Button.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -117,8 +136,8 @@ public class ReservationsActivity extends FragmentActivity implements
         });
 
         prefs = this.getSharedPreferences("eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
-        boolean isThereReservation = prefs.getBoolean("isThereReservation ", false);
-        if(isThereReservation){
+        boolean test = prefs.getBoolean("isThereReservation", false);
+        if(test){
             reserveCharging.setEnabled(false);
             readyToCharge.setEnabled(true);
         }
@@ -126,6 +145,7 @@ public class ReservationsActivity extends FragmentActivity implements
             reserveCharging.setEnabled(true);
             readyToCharge.setEnabled(false);
         }
+        BASE_URL = prefs.getString("base_url", "");
     }
 
     /**
@@ -135,26 +155,24 @@ public class ReservationsActivity extends FragmentActivity implements
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        /*//Move the camera to the venue where the demo will be presented
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(43.782391, 11.250345)));
-        googleMap.animateCamera(CameraUpdateFactory.zoomTo(15.0f));
-
-        //Placing 2 markers on the map, representing the 2 charging stations
+        mMap = googleMap;
+        /*//Placing 2 markers on the map, representing the 2 charging stations
         LatLng chargingStation1 = new LatLng(43.778428, 11.250622);
         LatLng chargingStation2 = new LatLng(43.786662, 11.250310);
         googleMap.addMarker(new MarkerOptions().position(chargingStation1).title("Charging station 1"));
         googleMap.addMarker(new MarkerOptions().position(chargingStation2).title("Charging Station 2"));
         googleMap.setOnMarkerClickListener((GoogleMap.OnMarkerClickListener) this);*/
 
-        mMap = googleMap;
+        //Move the camera to the venue where the demo will be presented
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(43.782391, 11.250345)));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(13.0f));
         enableMyLocation();
 
-        boolean isThereReservation = prefs.getBoolean("isThereReservation", false);
-        if(isThereReservation){
+        if(prefs.getBoolean("isThereReservation", false)){
             double latitude = Double.longBitsToDouble(prefs.getLong("latitude", 0));
             double longitude = Double.longBitsToDouble(prefs.getLong("longitude", 0));
             LatLng chargingStation = new LatLng(latitude, longitude);
-            mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
+            marker = mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
         }
     }
 
@@ -171,8 +189,7 @@ public class ReservationsActivity extends FragmentActivity implements
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) {
             return;
         }
@@ -192,14 +209,9 @@ public class ReservationsActivity extends FragmentActivity implements
         super.onResumeFragments();
         if (mPermissionDenied) {
             // Permission was not granted, display error dialog.
-            showMissingPermissionError();
+            PermissionUtils.PermissionDeniedDialog.newInstance(true).show(getSupportFragmentManager(), "dialog");
             mPermissionDenied = false;
         }
-    }
-
-    private void showMissingPermissionError() {
-        PermissionUtils.PermissionDeniedDialog
-                .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
 
     //Callback methods for the UserInputFragment
@@ -252,11 +264,15 @@ public class ReservationsActivity extends FragmentActivity implements
                                 double latitude = chargingResponse.getChargerLocation().getLatitude();
                                 double longitude = chargingResponse.getChargerLocation().getLongitude();
                                 LatLng chargingStation = new LatLng(latitude, longitude);
-                                mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
+                                marker = mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
                                 Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
 
+                                prefs.edit().putBoolean("isThereReservation", true).apply();
                                 prefs.edit().putLong("latitude", Double.doubleToRawLongBits(latitude)).apply();
                                 prefs.edit().putLong("longitude", Double.doubleToRawLongBits(longitude)).apply();
+
+                                reserveCharging.setEnabled(false);
+                                readyToCharge.setEnabled(true);
                             }},
                         new Response.ErrorListener() {
                             @Override
@@ -268,14 +284,20 @@ public class ReservationsActivity extends FragmentActivity implements
         //Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
         Toast.makeText(ReservationsActivity.this, R.string.request_sent, Toast.LENGTH_SHORT).show();
 
-        //TODO remove the test fragment when BASE_URL is known
+        //TODO remove the test coed below when BASE_URL is known
         String status = "Accepted";
         String id = "c46as-asd54-asd54-asd45-asd645";
+        prefs.edit().putString("chargingReqId", id).apply();
         ChargingResponseFragment newFragment = ChargingResponseFragment.newInstance(id, status);
         newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
         LatLng chargingStation = new LatLng(47.372290, 19.525751);
-        mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
+        marker = mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
         Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
+        prefs.edit().putBoolean("isThereReservation", true).apply();
+        prefs.edit().putLong("latitude", Double.doubleToRawLongBits(47.372290)).apply();
+        prefs.edit().putLong("longitude", Double.doubleToRawLongBits(19.525751)).apply();
+        reserveCharging.setEnabled(false);
+        readyToCharge.setEnabled(true);
     }
 
     public JSONObject compileChargingRequestPayload(String latestStopTime) throws JSONException {
@@ -333,6 +355,10 @@ public class ReservationsActivity extends FragmentActivity implements
                                     @Override
                                     public void onResponse(JSONObject response){
                                         Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+                                        reserveCharging.setEnabled(true);
+                                        readyToCharge.setEnabled(false);
+                                        marker.remove();
+                                        prefs.edit().putBoolean("isThereReservation", false).apply();
                                     }},
                                 new Response.ErrorListener() {
                                     @Override
@@ -343,8 +369,12 @@ public class ReservationsActivity extends FragmentActivity implements
                         );
                 //Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
 
-                //TODO remove this when BASE_URL is known
+                //TODO remove the test coed below when BASE_URL is known
                 Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+                reserveCharging.setEnabled(true);
+                readyToCharge.setEnabled(false);
+                marker.remove();
+                prefs.edit().putBoolean("isThereReservation", false).apply();
             }
         }
     }
@@ -363,5 +393,12 @@ public class ReservationsActivity extends FragmentActivity implements
         readyToCharge.put("chargingReqId", chargingReqId);
         readyToCharge.put("stateOfCharge", stateOfCharge);
         return readyToCharge;
+    }
+
+    @Override
+    public void onFragmentPositiveClick(DialogFragment dialog) {
+        EditText serverEndpoint = (EditText) dialog.getDialog().findViewById(R.id.server_endpoint_edittext);
+        BASE_URL = serverEndpoint.getText().toString();
+        prefs.edit().putString("base_url", serverEndpoint.getText().toString()).apply();
     }
 }

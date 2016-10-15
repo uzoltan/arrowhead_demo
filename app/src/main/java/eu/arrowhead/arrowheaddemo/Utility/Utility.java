@@ -54,8 +54,7 @@ public final class Utility {
         cal.set(Calendar.SECOND, 0);
 
         //DEFAULT FORMAT: "EEE MMM dd HH:mm:ss z yyyy"
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:MM:SSZZZZ", Locale.getDefault());
-        Log.i("date_test", sdf.format(cal.getTime()));
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZZ", Locale.getDefault());
         return sdf.format(cal.getTime());
     }
 
