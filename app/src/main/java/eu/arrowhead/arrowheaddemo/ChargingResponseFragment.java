@@ -15,10 +15,10 @@ public class ChargingResponseFragment extends DialogFragment {
 
     public static final String TAG = "ChargingResponseFragment";
 
-    public static ChargingResponseFragment newInstance(long chargingReqId, String status) {
+    public static ChargingResponseFragment newInstance(String chargingReqId, String status) {
         ChargingResponseFragment fragment = new ChargingResponseFragment();
         Bundle args = new Bundle();
-        args.putLong("chargingReqId", chargingReqId);
+        args.putString("chargingReqId", chargingReqId);
         args.putString("status", status);
         fragment.setArguments(args);
         return fragment;
@@ -41,7 +41,7 @@ public class ChargingResponseFragment extends DialogFragment {
                 });
 
         String status = getArguments().getString("status");
-        long chargingReqId = getArguments().getLong("chargingReqId");
+        String chargingReqId = getArguments().getString("chargingReqId");
         TextView statusText = (TextView) view.findViewById(R.id.status_textview);
         TextView requestIdText = (TextView) view.findViewById(R.id.request_id_textview);
         statusText.setText("Status: " + status);

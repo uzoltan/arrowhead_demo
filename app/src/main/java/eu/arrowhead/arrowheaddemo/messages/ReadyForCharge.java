@@ -3,22 +3,22 @@ package eu.arrowhead.arrowheaddemo.messages;
 
 public class ReadyForCharge {
 
-    private long chargingReqId;
+    private String chargingReqId;
     private StateOfCharge stateOfCharge;
 
     public ReadyForCharge() {
     }
 
-    public ReadyForCharge(long chargingReqId, StateOfCharge stateOfCharge) {
+    public ReadyForCharge(String chargingReqId, StateOfCharge stateOfCharge) {
         this.chargingReqId = chargingReqId;
         this.stateOfCharge = stateOfCharge;
     }
 
-    public long getChargingReqId() {
+    public String getChargingReqId() {
         return chargingReqId;
     }
 
-    public void setChargingReqId(long chargingReqId) {
+    public void setChargingReqId(String chargingReqId) {
         this.chargingReqId = chargingReqId;
     }
 

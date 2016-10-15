@@ -3,23 +3,24 @@ package eu.arrowhead.arrowheaddemo.messages;
 
 public class ChargingResponse {
 
-    //TODO String ID
-    private long chargingReqId;
+    private String chargingReqId;
     private String status;
+    private Location chargerLocation;
 
     public ChargingResponse() {
     }
 
-    public ChargingResponse(long chargingReqId, String status) {
+    public ChargingResponse(String chargingReqId, String status, Location chargerLocation) {
         this.chargingReqId = chargingReqId;
         this.status = status;
+        this.chargerLocation = chargerLocation;
     }
 
-    public long getChargingReqId() {
+    public String getChargingReqId() {
         return chargingReqId;
     }
 
-    public void setChargingReqId(long chargingReqId) {
+    public void setChargingReqId(String chargingReqId) {
         this.chargingReqId = chargingReqId;
     }
 
@@ -31,5 +32,11 @@ public class ChargingResponse {
         this.status = status;
     }
 
+    public Location getChargerLocation() {
+        return chargerLocation;
+    }
 
+    public void setChargerLocation(Location chargerLocation) {
+        this.chargerLocation = chargerLocation;
+    }
 }

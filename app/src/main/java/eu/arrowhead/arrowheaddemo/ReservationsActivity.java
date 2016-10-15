@@ -1,12 +1,17 @@
 package eu.arrowhead.arrowheaddemo;
 
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -28,18 +33,29 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import eu.arrowhead.arrowheaddemo.Utility.Networking;
+import eu.arrowhead.arrowheaddemo.Utility.PermissionUtils;
 import eu.arrowhead.arrowheaddemo.Utility.Utility;
 import eu.arrowhead.arrowheaddemo.messages.ChargingResponse;
 import eu.arrowhead.arrowheaddemo.messages.Location;
+import eu.arrowhead.arrowheaddemo.messages.ReadyForCharge;
 
-public class ReservationsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener,
-        UserInputFragment.UserIdDialogListener, TimePickerFragment.TimePickerListener, ReadyToChargeFragment.ReadyToChargeListener {
+import static eu.arrowhead.arrowheaddemo.R.id.map;
+
+public class ReservationsActivity extends FragmentActivity implements
+        OnMapReadyCallback,
+        UserInputFragment.UserIdDialogListener,
+        TimePickerFragment.TimePickerListener,
+        ReadyToChargeFragment.ReadyToChargeListener {
 
     private SharedPreferences prefs;
-    private Location selectedMarkerLocation;
+    private Location appointedChargerLocation;
     private String userId, EVId;
+    private GoogleMap mMap;
 
     private static String BASE_URL = "something";
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private boolean mPermissionDenied = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +63,7 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         setContentView(R.layout.activity_reservations);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(map);
         mapFragment.getMapAsync(this);
 
         //Setting up the user input FAB
@@ -78,9 +94,6 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
                     else if(EVId == null || EVId.isEmpty()){
                         Toast.makeText(ReservationsActivity.this, R.string.no_ev_id_warning, Toast.LENGTH_LONG).show();
                     }
-                    else if(selectedMarkerLocation == null){
-                        Toast.makeText(ReservationsActivity.this, R.string.no_charging_station_warning, Toast.LENGTH_LONG).show();
-                    }
                     else{
                         DialogFragment newFragment = new TimePickerFragment();
                         newFragment.show(getSupportFragmentManager(), TimePickerFragment.TAG);
@@ -104,6 +117,15 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         });
 
         prefs = this.getSharedPreferences("eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
+        boolean isThereReservation = prefs.getBoolean("isThereReservation ", false);
+        if(isThereReservation){
+            reserveCharging.setEnabled(false);
+            readyToCharge.setEnabled(true);
+        }
+        else{
+            reserveCharging.setEnabled(true);
+            readyToCharge.setEnabled(false);
+        }
     }
 
     /**
@@ -113,8 +135,7 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
-        //Move the camera to the venue where the demo will be presented
+        /*//Move the camera to the venue where the demo will be presented
         googleMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(43.782391, 11.250345)));
         googleMap.animateCamera(CameraUpdateFactory.zoomTo(15.0f));
 
@@ -123,7 +144,62 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         LatLng chargingStation2 = new LatLng(43.786662, 11.250310);
         googleMap.addMarker(new MarkerOptions().position(chargingStation1).title("Charging station 1"));
         googleMap.addMarker(new MarkerOptions().position(chargingStation2).title("Charging Station 2"));
-        googleMap.setOnMarkerClickListener((GoogleMap.OnMarkerClickListener) this);
+        googleMap.setOnMarkerClickListener((GoogleMap.OnMarkerClickListener) this);*/
+
+        mMap = googleMap;
+        enableMyLocation();
+
+        boolean isThereReservation = prefs.getBoolean("isThereReservation", false);
+        if(isThereReservation){
+            double latitude = Double.longBitsToDouble(prefs.getLong("latitude", 0));
+            double longitude = Double.longBitsToDouble(prefs.getLong("longitude", 0));
+            LatLng chargingStation = new LatLng(latitude, longitude);
+            mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
+        }
+    }
+
+    private void enableMyLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission to access the location is missing.
+            PermissionUtils.requestPermission(this, LOCATION_PERMISSION_REQUEST_CODE,
+                    Manifest.permission.ACCESS_FINE_LOCATION, true);
+        } else if (mMap != null) {
+            // Access to the location has been granted to the app.
+            mMap.setMyLocationEnabled(true);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) {
+            return;
+        }
+
+        if (PermissionUtils.isPermissionGranted(permissions, grantResults,
+                Manifest.permission.ACCESS_FINE_LOCATION)) {
+            // Enable the my location layer if the permission has been granted.
+            enableMyLocation();
+        } else {
+            // Display the missing permission error dialog when the fragments resume.
+            mPermissionDenied = true;
+        }
+    }
+
+    @Override
+    protected void onResumeFragments() {
+        super.onResumeFragments();
+        if (mPermissionDenied) {
+            // Permission was not granted, display error dialog.
+            showMissingPermissionError();
+            mPermissionDenied = false;
+        }
+    }
+
+    private void showMissingPermissionError() {
+        PermissionUtils.PermissionDeniedDialog
+                .newInstance(true).show(getSupportFragmentManager(), "dialog");
     }
 
     //Callback methods for the UserInputFragment
@@ -150,20 +226,10 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         dialog.getDialog().cancel();
     }
 
-    //Callback method for a marker click on the map, saving the location
-    @Override
-    public boolean onMarkerClick(Marker marker) {
-        LatLng latlng = marker.getPosition();
-        selectedMarkerLocation = new Location(latlng.latitude, latlng.longitude);
-        return false;
-    }
-
     //Callback method for the TimePickerFragment
     //Here we send the charging request with all the necessary information
     @Override
     public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
-        //TODO some kind of sanity check on the selected time?
-
         String latestStopTime = Utility.createLatestStopTime(hourOfDay, minute);
         JSONObject requestPayload = null;
         try {
@@ -172,16 +238,25 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
             e.printStackTrace();
         }
 
-        /*JsonObjectRequest jsObjRequest = new JsonObjectRequest
+        JsonObjectRequest jsObjRequest = new JsonObjectRequest
                 (Request.Method.POST, BASE_URL, requestPayload,
                         new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response){
                                 ChargingResponse chargingResponse = Utility.fromJsonObject(response.toString(), ChargingResponse.class);
-                                prefs.edit().putLong("chargingReqId", chargingResponse.getChargingReqId()).apply();
+                                prefs.edit().putString("chargingReqId", chargingResponse.getChargingReqId()).apply();
                                 ChargingResponseFragment newFragment =
                                         ChargingResponseFragment.newInstance(chargingResponse.getChargingReqId(), chargingResponse.getStatus());
                                 newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
+
+                                double latitude = chargingResponse.getChargerLocation().getLatitude();
+                                double longitude = chargingResponse.getChargerLocation().getLongitude();
+                                LatLng chargingStation = new LatLng(latitude, longitude);
+                                mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
+                                Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
+
+                                prefs.edit().putLong("latitude", Double.doubleToRawLongBits(latitude)).apply();
+                                prefs.edit().putLong("longitude", Double.doubleToRawLongBits(longitude)).apply();
                             }},
                         new Response.ErrorListener() {
                             @Override
@@ -189,21 +264,25 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
                                 Toast.makeText(ReservationsActivity.this,
                                         "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                             }}
-                );*/
+                );
+        //Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
+        Toast.makeText(ReservationsActivity.this, R.string.request_sent, Toast.LENGTH_SHORT).show();
 
         //TODO remove the test fragment when BASE_URL is known
         String status = "Accepted";
-        long id = 564131245;
+        String id = "c46as-asd54-asd54-asd45-asd645";
         ChargingResponseFragment newFragment = ChargingResponseFragment.newInstance(id, status);
         newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
-
-        Toast.makeText(ReservationsActivity.this, R.string.request_sent, Toast.LENGTH_SHORT).show();
+        LatLng chargingStation = new LatLng(47.372290, 19.525751);
+        mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
+        Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
     }
 
     public JSONObject compileChargingRequestPayload(String latestStopTime) throws JSONException {
+        android.location.Location myLocation = mMap.getMyLocation();
         JSONObject location = new JSONObject();
-        location.put("longitude", selectedMarkerLocation.getLongitude());
-        location.put("latitude", selectedMarkerLocation.getLatitude());
+        location.put("longitude", myLocation.getLongitude());
+        location.put("latitude", myLocation.getLatitude());
 
         JSONObject chargingRequest = new JSONObject();
         chargingRequest.put("userId", userId);
@@ -222,36 +301,51 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
 
         if(currentChargeText.getText().toString().isEmpty() || minTargetText.getText().toString().isEmpty()){
             Toast.makeText(ReservationsActivity.this, R.string.empty_imput_field_warning, Toast.LENGTH_LONG).show();
+            dialog.dismiss();
+            dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
         }
         else{
             double currentCharge = Double.parseDouble(currentChargeText.getText().toString());
             double minTarget = Double.parseDouble(minTargetText.getText().toString());
-            long chargingReqId = prefs.getLong("chargingReqId", 0);
-            String URL = BASE_URL + "/" + String.valueOf(chargingReqId);
-            JSONObject requestPayload = null;
-            try {
-                requestPayload = compileReadyToChargePayload(chargingReqId, currentCharge, minTarget);
-            } catch (JSONException e) {
-                e.printStackTrace();
+            if(currentCharge > 100.0 || minTarget > 100.0){
+                Toast.makeText(ReservationsActivity.this, R.string.high_values_warning, Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+                dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
             }
+            else if(currentCharge > minTarget){
+                Toast.makeText(ReservationsActivity.this, R.string.min_charge_target_warning, Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+                dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
+            }
+            else{
+                String chargingReqId = prefs.getString("chargingReqId", null);
+                String URL = BASE_URL + "/" + chargingReqId;
+                JSONObject requestPayload = null;
+                try {
+                    requestPayload = compileReadyToChargePayload(chargingReqId, currentCharge, minTarget);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
 
-        /*JsonObjectRequest jsObjRequest = new JsonObjectRequest
-                (Request.Method.POST, URL, requestPayload,
-                        new Response.Listener<JSONObject>() {
-                            @Override
-                            public void onResponse(JSONObject response){
-                                Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
-                            }},
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                Toast.makeText(ReservationsActivity.this,
-                                        "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
-                            }}
-                );*/
+                JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                        (Request.Method.POST, URL, requestPayload,
+                                new Response.Listener<JSONObject>() {
+                                    @Override
+                                    public void onResponse(JSONObject response){
+                                        Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+                                    }},
+                                new Response.ErrorListener() {
+                                    @Override
+                                    public void onErrorResponse(VolleyError error) {
+                                        Toast.makeText(ReservationsActivity.this,
+                                                "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                                    }}
+                        );
+                //Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
 
-            //TODO remove this when request sending works
-            Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+                //TODO remove this when BASE_URL is known
+                Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -260,7 +354,7 @@ public class ReservationsActivity extends FragmentActivity implements OnMapReady
         dialog.getDialog().cancel();
     }
 
-    public JSONObject compileReadyToChargePayload( long chargingReqId, double currentCharge, double minTarget) throws JSONException {
+    public JSONObject compileReadyToChargePayload(String chargingReqId, double currentCharge, double minTarget) throws JSONException {
         JSONObject stateOfCharge = new JSONObject();
         stateOfCharge.put("current", currentCharge);
         stateOfCharge.put("minTarget", minTarget);
