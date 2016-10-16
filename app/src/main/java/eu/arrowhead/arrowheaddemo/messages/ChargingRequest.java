@@ -1,8 +1,6 @@
 package eu.arrowhead.arrowheaddemo.messages;
 
 
-import java.util.Date;
-
 public class ChargingRequest {
 
     private String userId;

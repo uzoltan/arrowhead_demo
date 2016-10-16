@@ -11,8 +11,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -34,13 +32,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import eu.arrowhead.arrowheaddemo.Utility.Networking;
 import eu.arrowhead.arrowheaddemo.Utility.PermissionUtils;
 import eu.arrowhead.arrowheaddemo.Utility.Utility;
 import eu.arrowhead.arrowheaddemo.messages.ChargingResponse;
-
-import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
-import static eu.arrowhead.arrowheaddemo.R.id.map;
 
 public class ReservationsActivity extends FragmentActivity implements
         OnMapReadyCallback,
@@ -55,7 +49,7 @@ public class ReservationsActivity extends FragmentActivity implements
     private Marker marker;
     private Button reserveCharging, readyToCharge;
 
-    private static String BASE_URL;
+    private static String BASE_URL = "localhost";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean mPermissionDenied = false;
 
@@ -65,7 +59,7 @@ public class ReservationsActivity extends FragmentActivity implements
         setContentView(R.layout.activity_reservations);
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
         //Setting up the user input FAB
@@ -137,7 +131,10 @@ public class ReservationsActivity extends FragmentActivity implements
             reserveCharging.setEnabled(true);
             readyToCharge.setEnabled(false);
         }
-        BASE_URL = prefs.getString("base_url", "");
+
+        if(!prefs.getString("base_url", "").isEmpty()){
+            BASE_URL = prefs.getString("base_url", "");
+        }
     }
 
     /**
@@ -333,7 +330,7 @@ public class ReservationsActivity extends FragmentActivity implements
             }
             else{
                 String chargingReqId = prefs.getString("chargingReqId", null);
-                String URL = BASE_URL + "/" + chargingReqId;
+                String URL = BASE_URL + "/" + chargingReqId;;
                 JSONObject requestPayload = null;
                 try {
                     requestPayload = compileReadyToChargePayload(chargingReqId, currentCharge, minTarget);
@@ -390,7 +387,9 @@ public class ReservationsActivity extends FragmentActivity implements
     @Override
     public void onFragmentPositiveClick(DialogFragment dialog) {
         EditText serverEndpoint = (EditText) dialog.getDialog().findViewById(R.id.server_endpoint_edittext);
-        BASE_URL = serverEndpoint.getText().toString();
-        prefs.edit().putString("base_url", serverEndpoint.getText().toString()).apply();
+        if(!serverEndpoint.getText().toString().isEmpty()){
+            BASE_URL = serverEndpoint.getText().toString();
+            prefs.edit().putString("base_url", serverEndpoint.getText().toString()).apply();
+        }
     }
 }
