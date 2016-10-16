@@ -330,7 +330,7 @@ public class ReservationsActivity extends FragmentActivity implements
             }
             else{
                 String chargingReqId = prefs.getString("chargingReqId", null);
-                String URL = BASE_URL + "/" + chargingReqId;;
+                String URL = BASE_URL + "/" + chargingReqId;
                 JSONObject requestPayload = null;
                 try {
                     requestPayload = compileReadyToChargePayload(chargingReqId, currentCharge, minTarget);
