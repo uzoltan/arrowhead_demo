@@ -13,7 +13,7 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="5.8"
+        android:layout_weight="4"
         tools:context="eu.arrowhead.arrowheaddemo.ReservationsActivity">
 
         <android.support.design.widget.FloatingActionButton
@@ -43,8 +43,8 @@
             android:layout_marginTop="10dp"
             android:layout_weight="1"
             android:padding="12dp"
-            android:text="@string/reserve_charging_with_linebreak"
-            android:textSize="23sp"
+            android:text="@string/reserve_charging"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
         <Button
@@ -58,8 +58,8 @@
             android:layout_marginTop="10dp"
             android:layout_weight="1"
             android:padding="12dp"
-            android:text="@string/ready_to_charge_with_linebreak"
-            android:textSize="23sp"
+            android:text="@string/ready_to_charge"
+            android:textSize="28sp"
             android:textStyle="bold" />
 
     </LinearLayout>

@@ -39,6 +39,7 @@ import eu.arrowhead.arrowheaddemo.Utility.PermissionUtils;
 import eu.arrowhead.arrowheaddemo.Utility.Utility;
 import eu.arrowhead.arrowheaddemo.messages.ChargingResponse;
 
+import static android.icu.lang.UCharacter.GraphemeClusterBreak.V;
 import static eu.arrowhead.arrowheaddemo.R.id.map;
 
 public class ReservationsActivity extends FragmentActivity implements
@@ -77,20 +78,11 @@ public class ReservationsActivity extends FragmentActivity implements
             }
         });
 
-        fab.setOnTouchListener(new View.OnTouchListener() {
+        fab.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                long timeInstance = 0;
-                if(event.getAction() == MotionEvent.ACTION_DOWN){
-                    timeInstance = (Long) System.currentTimeMillis();
-                }
-                else if(event.getAction() == MotionEvent.ACTION_UP){
-                    if(((Long) System.currentTimeMillis() - timeInstance) > 1500){
-                        DialogFragment newFragment = new ServerEndpointFragment();
-                        newFragment.show(getSupportFragmentManager(), ServerEndpointFragment.TAG);
-                        return true;
-                    }
-                }
+            public boolean onLongClick(View view) {
+                DialogFragment newFragment = new ServerEndpointFragment();
+                newFragment.show(getSupportFragmentManager(), ServerEndpointFragment.TAG);
                 return false;
             }
         });

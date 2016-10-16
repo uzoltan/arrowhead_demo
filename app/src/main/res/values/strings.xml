@@ -3,11 +3,13 @@
     <string name="car_type">Car type:</string>
     <string name="licence_plate_number">Licence plate number</string>
     <string name="set_time">SET TIME</string>
-    <string name="reserve_charging">RESERVE\nCHARGING</string>
+    <string name="reserve_charging">RESERVE CHARGING</string>
+    <string name="reserve_charging_with_linebreak">RESERVE\nCHARGING</string>
+    <string name="ready_to_charge">READY TO CHARGE</string>
+    <string name="ready_to_charge_with_linebreak">READY TO\nCHARGE</string>
     <string name="user_id">User ID</string>
     <string name="ev_station_fab_label">Ready to charge</string>
     <string name="serverl_url">Serverl URL</string>
-    <string name="ready_to_charge">READY TO\nCHARGE</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="user_input_dialog_title">Necessary user inputs</string>
