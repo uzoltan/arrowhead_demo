@@ -279,12 +279,12 @@ public class ReservationsActivity extends FragmentActivity implements
         prefs.edit().putString("chargingReqId", id).apply();
         ChargingResponseFragment newFragment = ChargingResponseFragment.newInstance(id, status);
         newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
-        LatLng chargingStation = new LatLng(47.372290, 19.525751);
+        LatLng chargingStation = new LatLng(43.778428, 11.250622);
         marker = mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
         Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
         prefs.edit().putBoolean("isThereReservation", true).apply();
-        prefs.edit().putLong("latitude", Double.doubleToRawLongBits(47.372290)).apply();
-        prefs.edit().putLong("longitude", Double.doubleToRawLongBits(19.525751)).apply();
+        prefs.edit().putLong("latitude", Double.doubleToRawLongBits(43.778428)).apply();
+        prefs.edit().putLong("longitude", Double.doubleToRawLongBits(11.250622)).apply();
         reserveCharging.setEnabled(false);
         readyToCharge.setEnabled(true);
     }
