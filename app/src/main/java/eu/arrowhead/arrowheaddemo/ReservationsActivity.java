@@ -5,6 +5,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -290,10 +291,22 @@ public class ReservationsActivity extends FragmentActivity implements
     }
 
     public JSONObject compileChargingRequestPayload(String latestStopTime) throws JSONException {
-        android.location.Location myLocation = mMap.getMyLocation();
+        double latitude;
+        double longitude;
+        try{
+            android.location.Location myLocation = mMap.getMyLocation();
+            latitude = myLocation.getLatitude();
+            longitude = myLocation.getLongitude();
+        }
+        catch(NullPointerException ex){
+            //Static default values (same as the map center)
+            latitude = 43.782391;
+            longitude = 11.250345;
+        }
+
         JSONObject location = new JSONObject();
-        location.put("longitude", myLocation.getLongitude());
-        location.put("latitude", myLocation.getLatitude());
+        location.put("latitude", latitude);
+        location.put("longitude", longitude);
 
         JSONObject chargingRequest = new JSONObject();
         chargingRequest.put("userId", userId);
