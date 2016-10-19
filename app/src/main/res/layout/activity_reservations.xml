@@ -12,7 +12,7 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="5.8"
+        android:layout_weight="5"
         tools:context="eu.arrowhead.arrowheaddemo.ReservationsActivity">
 
         <android.support.design.widget.FloatingActionButton
@@ -41,7 +41,7 @@
             android:layout_marginStart="5dp"
             android:layout_marginTop="10dp"
             android:layout_weight="1"
-            android:padding="12dp"
+            android:padding="10dp"
             android:text="@string/reserve_charging_with_linebreak"
             android:textSize="23sp"
             android:textStyle="bold" />
@@ -56,7 +56,7 @@
             android:layout_marginStart="5dp"
             android:layout_marginTop="10dp"
             android:layout_weight="1"
-            android:padding="12dp"
+            android:padding="10dp"
             android:text="@string/ready_to_charge_with_linebreak"
             android:textSize="23sp"
             android:textStyle="bold" />

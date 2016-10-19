@@ -290,6 +290,7 @@ public class ReservationsActivity extends FragmentActivity implements
     }
 
     public JSONObject compileChargingRequestPayload(String latestStopTime) throws JSONException {
+        //TODO try catch nullpointerre és ha nem tudunk locationt szerezni, akkor küldjünk egy statikus értéket
         android.location.Location myLocation = mMap.getMyLocation();
         JSONObject location = new JSONObject();
         location.put("longitude", myLocation.getLongitude());
