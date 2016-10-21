@@ -3,23 +3,25 @@ package eu.arrowhead.arrowheaddemo.messages;
 
 public class ReadyForCharge {
 
-    private String chargingReqId;
+    private String chargingRequestId;
     private StateOfCharge stateOfCharge;
+    private String latestStopTime;
 
     public ReadyForCharge() {
     }
 
-    public ReadyForCharge(String chargingReqId, StateOfCharge stateOfCharge) {
-        this.chargingReqId = chargingReqId;
+    public ReadyForCharge(String chargingRequestId, StateOfCharge stateOfCharge, String latestStopTime) {
+        this.chargingRequestId = chargingRequestId;
         this.stateOfCharge = stateOfCharge;
+        this.latestStopTime = latestStopTime;
     }
 
-    public String getChargingReqId() {
-        return chargingReqId;
+    public String getChargingRequestId() {
+        return chargingRequestId;
     }
 
-    public void setChargingReqId(String chargingReqId) {
-        this.chargingReqId = chargingReqId;
+    public void setChargingRequestId(String chargingRequestId) {
+        this.chargingRequestId = chargingRequestId;
     }
 
     public StateOfCharge getStateOfCharge() {
@@ -30,5 +32,11 @@ public class ReadyForCharge {
         this.stateOfCharge = stateOfCharge;
     }
 
+    public String getLatestStopTime() {
+        return latestStopTime;
+    }
 
+    public void setLatestStopTime(String latestStopTime) {
+        this.latestStopTime = latestStopTime;
+    }
 }

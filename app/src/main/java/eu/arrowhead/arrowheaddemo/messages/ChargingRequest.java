@@ -4,18 +4,18 @@ package eu.arrowhead.arrowheaddemo.messages;
 public class ChargingRequest {
 
     private String userId;
-    private String EVId;
-    private String latestStopTime;
+    private String evId;
     private Location location;
+    private String chargerId;
 
     public ChargingRequest() {
     }
 
-    public ChargingRequest(String userId, String EVId, String latestStopTime, Location location) {
+    public ChargingRequest(String userId, String evId, Location location, String chargerId) {
         this.userId = userId;
-        this.EVId = EVId;
-        this.latestStopTime = latestStopTime;
+        this.evId = evId;
         this.location = location;
+        this.chargerId = chargerId;
     }
 
     public String getUserId() {
@@ -26,20 +26,12 @@ public class ChargingRequest {
         this.userId = userId;
     }
 
-    public String getEVId() {
-        return EVId;
+    public String getEvId() {
+        return evId;
     }
 
-    public void setEVId(String EVId) {
-        this.EVId = EVId;
-    }
-
-    public String getLatestStopTime() {
-        return latestStopTime;
-    }
-
-    public void setLatestStopTime(String latestStopTime) {
-        this.latestStopTime = latestStopTime;
+    public void setEvId(String evId) {
+        this.evId = evId;
     }
 
     public Location getLocation() {
@@ -50,5 +42,11 @@ public class ChargingRequest {
         this.location = location;
     }
 
+    public String getChargerId() {
+        return chargerId;
+    }
 
+    public void setChargerId(String chargerId) {
+        this.chargerId = chargerId;
+    }
 }

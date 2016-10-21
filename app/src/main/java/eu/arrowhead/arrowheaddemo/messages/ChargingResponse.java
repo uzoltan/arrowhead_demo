@@ -3,40 +3,40 @@ package eu.arrowhead.arrowheaddemo.messages;
 
 public class ChargingResponse {
 
-    private String chargingReqId;
-    private String status;
-    private Location chargerLocation;
+    private String chargingRequestId;
+    private String occpChargePointStatus;
+    private Location chargePointLocation;
 
     public ChargingResponse() {
     }
 
-    public ChargingResponse(String chargingReqId, String status, Location chargerLocation) {
-        this.chargingReqId = chargingReqId;
-        this.status = status;
-        this.chargerLocation = chargerLocation;
+    public ChargingResponse(String chargingRequestId, String occpChargePointStatus, Location chargePointLocation) {
+        this.chargingRequestId = chargingRequestId;
+        this.occpChargePointStatus = occpChargePointStatus;
+        this.chargePointLocation = chargePointLocation;
     }
 
-    public String getChargingReqId() {
-        return chargingReqId;
+    public String getChargingRequestId() {
+        return chargingRequestId;
     }
 
-    public void setChargingReqId(String chargingReqId) {
-        this.chargingReqId = chargingReqId;
+    public void setChargingRequestId(String chargingRequestId) {
+        this.chargingRequestId = chargingRequestId;
     }
 
-    public String getStatus() {
-        return status;
+    public String getOccpChargePointStatus() {
+        return occpChargePointStatus;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setOccpChargePointStatus(String occpChargePointStatus) {
+        this.occpChargePointStatus = occpChargePointStatus;
     }
 
-    public Location getChargerLocation() {
-        return chargerLocation;
+    public Location getChargePointLocation() {
+        return chargePointLocation;
     }
 
-    public void setChargerLocation(Location chargerLocation) {
-        this.chargerLocation = chargerLocation;
+    public void setChargePointLocation(Location chargePointLocation) {
+        this.chargePointLocation = chargePointLocation;
     }
 }
