@@ -116,7 +116,8 @@ public class ReservationsActivity extends FragmentActivity implements
                                             @Override
                                             public void onResponse(JSONObject response){
                                                 ChargingResponse chargingResponse = Utility.fromJsonObject(response.toString(), ChargingResponse.class);
-                                                if(chargingResponse.getOccpChargePointStatus().equals("Rejected")){
+                                                if(chargingResponse.getOccpChargePointStatus() == null ||
+                                                        chargingResponse.getOccpChargePointStatus().equals("Rejected")){
                                                     Toast.makeText(ReservationsActivity.this, R.string.cpms_rejected_the_request, Toast.LENGTH_LONG).show();
                                                 }
                                                 else{
@@ -167,9 +168,22 @@ public class ReservationsActivity extends FragmentActivity implements
             }
         });
 
+        //TODO longclick listener readytocharge-ra, ami alap állapotba rakja az appet, user inputokat is törli
+        readyToCharge.setOnLongClickListener(new Button.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View view) {
+                mMap.clear();
+                reserveCharging.setEnabled(true);
+                readyToCharge.setEnabled(false);
+                prefs.edit().putBoolean("isThereReservation", false).apply();
+                prefs.edit().putString("userId", "").apply();
+                prefs.edit().putString("EVId", "").apply();
+                return false;
+            }
+        });
+
         prefs = this.getSharedPreferences("eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
-        boolean test = prefs.getBoolean("isThereReservation", false);
-        if(test){
+        if(prefs.getBoolean("isThereReservation", false)){
             reserveCharging.setEnabled(false);
             readyToCharge.setEnabled(true);
         }
@@ -375,7 +389,7 @@ public class ReservationsActivity extends FragmentActivity implements
         String latestStopTime = prefs.getString("latestStopTime", "");
 
         JSONObject readyToCharge = new JSONObject();
-        readyToCharge.put("chargingReqId", chargingReqId);
+        readyToCharge.put("chargingRequestId", chargingReqId);
         readyToCharge.put("latestStopTime", latestStopTime);
         readyToCharge.put("stateOfCharge", stateOfCharge);
         Log.i("ready_to_charge_payload", readyToCharge.toString());
