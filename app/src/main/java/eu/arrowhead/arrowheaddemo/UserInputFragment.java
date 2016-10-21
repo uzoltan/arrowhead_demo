@@ -13,6 +13,7 @@ import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 public class UserInputFragment extends DialogFragment {
 
@@ -23,7 +24,6 @@ public class UserInputFragment extends DialogFragment {
     * Each method passes the DialogFragment in case the host needs to query it. */
     public interface UserIdDialogListener {
         public void onDialogPositiveClick(DialogFragment dialog);
-        public void onDialogNegativeClick(DialogFragment dialog);
     }
 
     // Use this instance of the interface to deliver action events
@@ -44,14 +44,12 @@ public class UserInputFragment extends DialogFragment {
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-                        // Send the positive button event back to the host activity
                         mListener.onDialogPositiveClick(UserInputFragment.this);
                     }
                 })
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        // Send the negative button event back to the host activity
-                        mListener.onDialogNegativeClick(UserInputFragment.this);
+                        dialog.cancel();
                     }
                 });
         builder.setTitle(R.string.user_input_dialog_title);

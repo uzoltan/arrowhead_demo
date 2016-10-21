@@ -9,8 +9,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:inputType="numberDecimal"
         android:hint="@string/current_charge"
+        android:inputType="numberDecimal"
         android:maxLines="1"
         android:textSize="20sp" />
 
@@ -19,8 +19,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:inputType="numberDecimal"
         android:hint="@string/min_charge_target"
+        android:inputType="numberDecimal"
         android:maxLines="1"
         android:textSize="20sp" />
 

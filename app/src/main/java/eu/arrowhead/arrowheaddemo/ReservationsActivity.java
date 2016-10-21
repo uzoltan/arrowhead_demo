@@ -11,6 +11,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -37,11 +38,6 @@ import eu.arrowhead.arrowheaddemo.Utility.PermissionUtils;
 import eu.arrowhead.arrowheaddemo.Utility.Utility;
 import eu.arrowhead.arrowheaddemo.messages.ChargingResponse;
 
-//TODO reserve chargnál nem kell időpont, át kell rakni a ready to chargehoz.
-// vagy egy nagy fragmenten az edittextekkel, vagy egymást kövesse a kettő felugró ablak
-//beégetett töltőállomás ID-k, eACC0010, eACC0025
-//a régi (töltőállomás váltó) és location visszaadó mód is legyen jól előkészítve, hogy kikommentezéssel könnyű legyen váltani
-//chargingResponseban lehet  (Integer) responseCode, responseMessage, responseDetails is
 public class ReservationsActivity extends FragmentActivity implements
         OnMapReadyCallback,
         UserInputFragment.UserIdDialogListener,
@@ -55,8 +51,9 @@ public class ReservationsActivity extends FragmentActivity implements
     private Marker marker;
     private Button reserveCharging, readyToCharge;
 
-    private static String BASE_URL = "https://echarger.evopro.hu:8080/ocpp-app/EVCharging/charging";
-    private static String BASE_URL2 = "https://echarger.evopro.hu:8080/ocpp-app/EVCharging/readyForCharge";
+    private static String BASE_URL = "https://echarger.evopro.hu/ocpp-app/EVCharging/";
+    private static String RESERVE_URL = BASE_URL + "charging";
+    private static String READY_URL = BASE_URL + "readyForCharge";
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private boolean mPermissionDenied = false;
 
@@ -107,8 +104,45 @@ public class ReservationsActivity extends FragmentActivity implements
                         Toast.makeText(ReservationsActivity.this, R.string.no_ev_id_warning, Toast.LENGTH_LONG).show();
                     }
                     else{
-                        DialogFragment newFragment = new TimePickerFragment();
-                        newFragment.show(getSupportFragmentManager(), TimePickerFragment.TAG);
+                        JSONObject requestPayload = null;
+                        try {
+                            requestPayload = compileChargingRequestPayload();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                                (Request.Method.POST, RESERVE_URL, requestPayload,
+                                        new Response.Listener<JSONObject>() {
+                                            @Override
+                                            public void onResponse(JSONObject response){
+                                                ChargingResponse chargingResponse = Utility.fromJsonObject(response.toString(), ChargingResponse.class);
+                                                prefs.edit().putString("chargingReqId", chargingResponse.getChargingRequestId()).apply();
+                                                ChargingResponseFragment newFragment =
+                                                        ChargingResponseFragment.newInstance(chargingResponse.getChargingRequestId(), chargingResponse.getOccpChargePointStatus());
+                                                newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
+
+                                                double latitude = chargingResponse.getChargePointLocation().getLatitude();
+                                                double longitude = chargingResponse.getChargePointLocation().getLongitude();
+                                                LatLng chargingStation = new LatLng(latitude, longitude);
+                                                marker = mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
+                                                Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
+
+                                                prefs.edit().putBoolean("isThereReservation", true).apply();
+                                                prefs.edit().putLong("latitude", Double.doubleToRawLongBits(latitude)).apply();
+                                                prefs.edit().putLong("longitude", Double.doubleToRawLongBits(longitude)).apply();
+
+                                                reserveCharging.setEnabled(false);
+                                                readyToCharge.setEnabled(true);
+                                            }},
+                                        new Response.ErrorListener() {
+                                            @Override
+                                            public void onErrorResponse(VolleyError error) {
+                                                Toast.makeText(ReservationsActivity.this,
+                                                        "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                                            }}
+                                );
+                        Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
+                        Toast.makeText(ReservationsActivity.this, R.string.request_sent, Toast.LENGTH_SHORT).show();
                     }
                 }
             }
@@ -122,8 +156,8 @@ public class ReservationsActivity extends FragmentActivity implements
                     Toast.makeText(ReservationsActivity.this, R.string.no_internet_warning, Toast.LENGTH_LONG).show();
                 }
                 else{
-                    DialogFragment newFragment = new ReadyToChargeFragment();
-                    newFragment.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
+                    DialogFragment newFragment = new TimePickerFragment();
+                    newFragment.show(getSupportFragmentManager(), TimePickerFragment.TAG);
                 }
             }
         });
@@ -142,6 +176,33 @@ public class ReservationsActivity extends FragmentActivity implements
         if(!prefs.getString("base_url", "").isEmpty()){
             BASE_URL = prefs.getString("base_url", "");
         }
+    }
+
+    public JSONObject compileChargingRequestPayload() throws JSONException {
+        double latitude;
+        double longitude;
+        try{
+            android.location.Location myLocation = mMap.getMyLocation();
+            latitude = myLocation.getLatitude();
+            longitude = myLocation.getLongitude();
+        }
+        catch(NullPointerException ex){
+            //Static default values (same as the map center)
+            latitude = 43.782391;
+            longitude = 11.250345;
+        }
+        JSONObject location = new JSONObject();
+        location.put("latitude", latitude);
+        location.put("longitude", longitude);
+
+        JSONObject chargingRequest = new JSONObject();
+        chargingRequest.put("userId", userId);
+        chargingRequest.put("evId", EVId);
+        chargingRequest.put("location", location);
+        //TODO hardwired!
+        chargingRequest.put("chargerId", "eACC0010");
+        Log.i("json", chargingRequest.toString());
+        return chargingRequest;
     }
 
     /**
@@ -210,7 +271,7 @@ public class ReservationsActivity extends FragmentActivity implements
         }
     }
 
-    //Callback methods for the UserInputFragment
+    //Callback method for the UserInputFragment
     @Override
     public void onDialogPositiveClick(DialogFragment dialog) {
         EditText userId = (EditText) dialog.getDialog().findViewById(R.id.user_id_edittext);
@@ -229,26 +290,114 @@ public class ReservationsActivity extends FragmentActivity implements
         }
     }
 
+    //Callback method for the TimePickerFragment
     @Override
-    public void onDialogNegativeClick(DialogFragment dialog) {
-        dialog.getDialog().cancel();
+    public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
+        String latestStopTime = Utility.createLatestStopTime(hourOfDay, minute);
+        prefs.edit().putString("latestStopTime", latestStopTime).apply();
+
+        DialogFragment newFragment = new ReadyToChargeFragment();
+        newFragment.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
     }
 
-    //Callback method for the TimePickerFragment
-    //Here we send the charging request with all the necessary information
+    //Callback methods for the ReadyToChargeFragment
     @Override
+    public void onDialogOkClick(DialogFragment dialog) {
+        EditText currentChargeText = (EditText) dialog.getDialog().findViewById(R.id.current_charge_edittext);
+        EditText minTargetText = (EditText) dialog.getDialog().findViewById(R.id.min_charge_target_edittext);
+
+        if(currentChargeText.getText().toString().isEmpty() || minTargetText.getText().toString().isEmpty()){
+            Toast.makeText(ReservationsActivity.this, R.string.empty_imput_field_warning, Toast.LENGTH_LONG).show();
+            dialog.dismiss();
+            dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
+        }
+        else{
+            double currentCharge = Double.parseDouble(currentChargeText.getText().toString());
+            double minTarget = Double.parseDouble(minTargetText.getText().toString());
+            if(currentCharge > 100.0 || minTarget > 100.0){
+                Toast.makeText(ReservationsActivity.this, R.string.high_values_warning, Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+                dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
+            }
+            else if(currentCharge > minTarget){
+                Toast.makeText(ReservationsActivity.this, R.string.min_charge_target_warning, Toast.LENGTH_LONG).show();
+                dialog.dismiss();
+                dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
+            }
+            else{
+                JSONObject requestPayload = null;
+                try {
+                    requestPayload = compileReadyToChargePayload(currentCharge, minTarget);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+                JsonObjectRequest jsObjRequest = new JsonObjectRequest
+                        (Request.Method.POST, READY_URL, requestPayload,
+                                new Response.Listener<JSONObject>() {
+                                    @Override
+                                    public void onResponse(JSONObject response){
+                                        Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+                                        reserveCharging.setEnabled(true);
+                                        readyToCharge.setEnabled(false);
+                                        marker.remove();
+                                        prefs.edit().putBoolean("isThereReservation", false).apply();
+                                    }},
+                                new Response.ErrorListener() {
+                                    @Override
+                                    public void onErrorResponse(VolleyError error) {
+                                        Toast.makeText(ReservationsActivity.this,
+                                                "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                                    }}
+                        );
+                Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
+
+                /*//TEST CODE for skipping network call
+                Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+                reserveCharging.setEnabled(true);
+                readyToCharge.setEnabled(false);
+                marker.remove();
+                prefs.edit().putBoolean("isThereReservation", false).apply();*/
+            }
+        }
+    }
+
+    public JSONObject compileReadyToChargePayload(double currentCharge, double minTarget) throws JSONException {
+        JSONObject stateOfCharge = new JSONObject();
+        stateOfCharge.put("current", currentCharge);
+        stateOfCharge.put("minTarget", minTarget);
+
+        String chargingReqId = prefs.getString("chargingReqId", "");
+        String latestStopTime = prefs.getString("latestStopTime", "");
+
+        JSONObject readyToCharge = new JSONObject();
+        readyToCharge.put("chargingReqId", chargingReqId);
+        readyToCharge.put("latestStopTime", latestStopTime);
+        readyToCharge.put("stateOfCharge", stateOfCharge);
+        return readyToCharge;
+    }
+
+    @Override
+    public void onFragmentPositiveClick(DialogFragment dialog) {
+        EditText serverEndpoint = (EditText) dialog.getDialog().findViewById(R.id.server_endpoint_edittext);
+        if(!serverEndpoint.getText().toString().isEmpty()){
+            BASE_URL = serverEndpoint.getText().toString();
+            prefs.edit().putString("base_url", serverEndpoint.getText().toString()).apply();
+        }
+    }
+
+    /*@Override
     public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
         String latestStopTime = Utility.createLatestStopTime(hourOfDay, minute);
         prefs.edit().putString("latestStopTime", latestStopTime).apply();
         JSONObject requestPayload = null;
         try {
-            requestPayload = compileChargingRequestPayload(latestStopTime);
+            requestPayload = compileChargingRequestPayload();
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
         JsonObjectRequest jsObjRequest = new JsonObjectRequest
-                (Request.Method.POST, BASE_URL, requestPayload,
+                (Request.Method.POST, RESERVE_URL, requestPayload,
                         new Response.Listener<JSONObject>() {
                             @Override
                             public void onResponse(JSONObject response){
@@ -281,7 +430,6 @@ public class ReservationsActivity extends FragmentActivity implements
         Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
         Toast.makeText(ReservationsActivity.this, R.string.request_sent, Toast.LENGTH_SHORT).show();
 
-        /*//TODO remove the test coed below when BASE_URL is known
         String status = "Accepted";
         String id = "c46as-asd54-asd54-asd45-asd645";
         prefs.edit().putString("chargingReqId", id).apply();
@@ -294,124 +442,6 @@ public class ReservationsActivity extends FragmentActivity implements
         prefs.edit().putLong("latitude", Double.doubleToRawLongBits(43.778428)).apply();
         prefs.edit().putLong("longitude", Double.doubleToRawLongBits(11.250622)).apply();
         reserveCharging.setEnabled(false);
-        readyToCharge.setEnabled(true);*/
-    }
-
-    public JSONObject compileChargingRequestPayload(String latestStopTime) throws JSONException {
-        double latitude;
-        double longitude;
-        try{
-            android.location.Location myLocation = mMap.getMyLocation();
-            latitude = myLocation.getLatitude();
-            longitude = myLocation.getLongitude();
-        }
-        catch(NullPointerException ex){
-            //Static default values (same as the map center)
-            latitude = 43.782391;
-            longitude = 11.250345;
-        }
-        JSONObject location = new JSONObject();
-        location.put("latitude", latitude);
-        location.put("longitude", longitude);
-
-        JSONObject chargingRequest = new JSONObject();
-        chargingRequest.put("userId", userId);
-        chargingRequest.put("EVId", EVId);
-        chargingRequest.put("location", location);
-        chargingRequest.put("chargingStationId", "eACC0010");
-        return chargingRequest;
-    }
-
-
-    //Callback methods for the ReadyToChargeFragment
-    @Override
-    public void onDialogOkClick(DialogFragment dialog) {
-        EditText currentChargeText = (EditText) dialog.getDialog().findViewById(R.id.current_charge_edittext);
-        EditText minTargetText = (EditText) dialog.getDialog().findViewById(R.id.min_charge_target_edittext);
-
-        if(currentChargeText.getText().toString().isEmpty() || minTargetText.getText().toString().isEmpty()){
-            Toast.makeText(ReservationsActivity.this, R.string.empty_imput_field_warning, Toast.LENGTH_LONG).show();
-            dialog.dismiss();
-            dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
-        }
-        else{
-            double currentCharge = Double.parseDouble(currentChargeText.getText().toString());
-            double minTarget = Double.parseDouble(minTargetText.getText().toString());
-            if(currentCharge > 100.0 || minTarget > 100.0){
-                Toast.makeText(ReservationsActivity.this, R.string.high_values_warning, Toast.LENGTH_LONG).show();
-                dialog.dismiss();
-                dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
-            }
-            else if(currentCharge > minTarget){
-                Toast.makeText(ReservationsActivity.this, R.string.min_charge_target_warning, Toast.LENGTH_LONG).show();
-                dialog.dismiss();
-                dialog.show(getSupportFragmentManager(), ReadyToChargeFragment.TAG);
-            }
-            else{
-                String chargingReqId = prefs.getString("chargingReqId", "");
-                //TODO ez már nem kell, nem lesz dinamikus útvonal
-                String URL = BASE_URL + "/" + chargingReqId;
-                JSONObject requestPayload = null;
-                try {
-                    requestPayload = compileReadyToChargePayload(chargingReqId, currentCharge, minTarget);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-                JsonObjectRequest jsObjRequest = new JsonObjectRequest
-                        (Request.Method.POST, BASE_URL2, requestPayload,
-                                new Response.Listener<JSONObject>() {
-                                    @Override
-                                    public void onResponse(JSONObject response){
-                                        Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
-                                        reserveCharging.setEnabled(true);
-                                        readyToCharge.setEnabled(false);
-                                        marker.remove();
-                                        prefs.edit().putBoolean("isThereReservation", false).apply();
-                                    }},
-                                new Response.ErrorListener() {
-                                    @Override
-                                    public void onErrorResponse(VolleyError error) {
-                                        Toast.makeText(ReservationsActivity.this,
-                                                "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
-                                    }}
-                        );
-                Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
-
-                /*//TODO remove the test coed below when BASE_URL is known
-                Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
-                reserveCharging.setEnabled(true);
-                readyToCharge.setEnabled(false);
-                marker.remove();
-                prefs.edit().putBoolean("isThereReservation", false).apply();*/
-            }
-        }
-    }
-
-    @Override
-    public void onDialogCancelClick(DialogFragment dialog) {
-        dialog.getDialog().cancel();
-    }
-
-    public JSONObject compileReadyToChargePayload(String chargingReqId, double currentCharge, double minTarget) throws JSONException {
-        JSONObject stateOfCharge = new JSONObject();
-        stateOfCharge.put("current", currentCharge);
-        stateOfCharge.put("minTarget", minTarget);
-        String latestStopTime = prefs.getString("latestStopTime", "");
-
-        JSONObject readyToCharge = new JSONObject();
-        readyToCharge.put("chargingReqId", chargingReqId);
-        readyToCharge.put("stateOfCharge", stateOfCharge);
-        readyToCharge.put("latestStopTime", latestStopTime);
-        return readyToCharge;
-    }
-
-    @Override
-    public void onFragmentPositiveClick(DialogFragment dialog) {
-        EditText serverEndpoint = (EditText) dialog.getDialog().findViewById(R.id.server_endpoint_edittext);
-        if(!serverEndpoint.getText().toString().isEmpty()){
-            BASE_URL = serverEndpoint.getText().toString();
-            prefs.edit().putString("base_url", serverEndpoint.getText().toString()).apply();
-        }
-    }
+        readyToCharge.setEnabled(true);
+    }*/
 }
