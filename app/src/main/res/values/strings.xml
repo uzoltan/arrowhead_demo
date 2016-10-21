@@ -26,4 +26,5 @@
     <string name="permission_required_toast">Location permission is required for this demo.</string>
     <string name="charging_station_displayed">Appointed charging station displayed on the map.</string>
     <string name="server_endpoint">Server endpoint</string>
+    <string name="cpms_rejected_the_request">CPMS rejected the request</string>
 </resources>

@@ -116,23 +116,28 @@ public class ReservationsActivity extends FragmentActivity implements
                                             @Override
                                             public void onResponse(JSONObject response){
                                                 ChargingResponse chargingResponse = Utility.fromJsonObject(response.toString(), ChargingResponse.class);
-                                                prefs.edit().putString("chargingReqId", chargingResponse.getChargingRequestId()).apply();
-                                                ChargingResponseFragment newFragment =
-                                                        ChargingResponseFragment.newInstance(chargingResponse.getChargingRequestId(), chargingResponse.getOccpChargePointStatus());
-                                                newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
+                                                if(chargingResponse.getOccpChargePointStatus().equals("Rejected")){
+                                                    Toast.makeText(ReservationsActivity.this, R.string.cpms_rejected_the_request, Toast.LENGTH_LONG).show();
+                                                }
+                                                else{
+                                                    prefs.edit().putString("chargingReqId", chargingResponse.getChargingRequestId()).apply();
+                                                    ChargingResponseFragment newFragment =
+                                                            ChargingResponseFragment.newInstance(chargingResponse.getChargingRequestId(), chargingResponse.getOccpChargePointStatus());
+                                                    newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
 
-                                                double latitude = chargingResponse.getChargePointLocation().getLatitude();
-                                                double longitude = chargingResponse.getChargePointLocation().getLongitude();
-                                                LatLng chargingStation = new LatLng(latitude, longitude);
-                                                marker = mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
-                                                Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
+                                                    double latitude = chargingResponse.getChargePointLocation().getLatitude();
+                                                    double longitude = chargingResponse.getChargePointLocation().getLongitude();
+                                                    LatLng chargingStation = new LatLng(latitude, longitude);
+                                                    marker = mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
+                                                    Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
 
-                                                prefs.edit().putBoolean("isThereReservation", true).apply();
-                                                prefs.edit().putLong("latitude", Double.doubleToRawLongBits(latitude)).apply();
-                                                prefs.edit().putLong("longitude", Double.doubleToRawLongBits(longitude)).apply();
+                                                    prefs.edit().putBoolean("isThereReservation", true).apply();
+                                                    prefs.edit().putLong("latitude", Double.doubleToRawLongBits(latitude)).apply();
+                                                    prefs.edit().putLong("longitude", Double.doubleToRawLongBits(longitude)).apply();
 
-                                                reserveCharging.setEnabled(false);
-                                                readyToCharge.setEnabled(true);
+                                                    reserveCharging.setEnabled(false);
+                                                    readyToCharge.setEnabled(true);
+                                                }
                                             }},
                                         new Response.ErrorListener() {
                                             @Override
@@ -201,7 +206,7 @@ public class ReservationsActivity extends FragmentActivity implements
         chargingRequest.put("location", location);
         //TODO hardwired!
         chargingRequest.put("chargerId", "eACC0010");
-        Log.i("json", chargingRequest.toString());
+        Log.i("charge_request_payload", chargingRequest.toString());
         return chargingRequest;
     }
 
@@ -373,6 +378,7 @@ public class ReservationsActivity extends FragmentActivity implements
         readyToCharge.put("chargingReqId", chargingReqId);
         readyToCharge.put("latestStopTime", latestStopTime);
         readyToCharge.put("stateOfCharge", stateOfCharge);
+        Log.i("ready_to_charge_payload", readyToCharge.toString());
         return readyToCharge;
     }
 
