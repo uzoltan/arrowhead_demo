@@ -1,7 +1,6 @@
 package eu.arrowhead.arrowheaddemo;
 
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -12,22 +11,14 @@ import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.Toast;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
 
-public class UserInputFragment extends DialogFragment {
+public class UserInputFragment extends DialogFragment implements AdapterView.OnItemSelectedListener {
 
     public static final String TAG = "UserInputFragment";
-
-    /* The activity that creates an instance of this dialog fragment must
-    * implement this interface in order to receive event callbacks.
-    * Each method passes the DialogFragment in case the host needs to query it. */
-    public interface UserIdDialogListener {
-        public void onDialogPositiveClick(DialogFragment dialog);
-    }
-
-    // Use this instance of the interface to deliver action events
-    UserIdDialogListener mListener;
+    private SharedPreferences prefs;
 
     @NonNull
     @Override
@@ -39,12 +30,27 @@ public class UserInputFragment extends DialogFragment {
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
         View view = inflater.inflate(R.layout.dialog_user_input, null);
+
+        Spinner userIdSpinner = (Spinner) view.findViewById(R.id.user_id_spinner);
+        ArrayAdapter<CharSequence> userIdAdapter = ArrayAdapter.createFromResource(getActivity(),
+                R.array.user_id_array, android.R.layout.simple_spinner_item);
+        userIdAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        userIdSpinner.setAdapter(userIdAdapter);
+        userIdSpinner.setOnItemSelectedListener(this);
+
+        Spinner evIdSpinner = (Spinner) view.findViewById(R.id.licence_plate_spinner);
+        ArrayAdapter<CharSequence> evIdAdapter = ArrayAdapter.createFromResource(getActivity(),
+                R.array.ev_id_array, android.R.layout.simple_spinner_item);
+        evIdAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        evIdSpinner.setAdapter(evIdAdapter);
+        evIdSpinner.setOnItemSelectedListener(this);
+
         builder.setView(view)
                 // Add action buttons
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-                        mListener.onDialogPositiveClick(UserInputFragment.this);
+                        dialog.dismiss();
                     }
                 })
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -54,38 +60,36 @@ public class UserInputFragment extends DialogFragment {
                 });
         builder.setTitle(R.string.user_input_dialog_title);
 
-        //Fill in the EditTexts with saved values
-        SharedPreferences prefs = getActivity().getSharedPreferences("eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
-        String userId = prefs.getString("userId", null);
-        if(userId != null && !userId.isEmpty()){
-            EditText userIdField = (EditText) view.findViewById(R.id.user_id_edittext);
-            userIdField.setText(userId);
-            int position = userId.length();
-            userIdField.setSelection(position);
+        //Set the Spinners to the saved value
+        prefs = getActivity().getSharedPreferences("eu.arrowhead.arrowheaddemo", Context.MODE_PRIVATE);
+        int userIdPos = prefs.getInt("userIdPos", -1);
+        if(userIdPos != -1){
+            userIdSpinner.setSelection(userIdPos);
         }
-        String EVId = prefs.getString("EVId", null);
-        if(EVId != null && !EVId.isEmpty()){
-            EditText EVIdField = (EditText) view.findViewById(R.id.licence_plate_edittext);
-            EVIdField.setText(EVId);
+        int evIdPos = prefs.getInt("evIdPos", -1);
+        if(evIdPos != -1){
+            evIdSpinner.setSelection(evIdPos);
         }
 
         return builder.create();
     }
 
-    // Override the Fragment.onAttach() method to instantiate the UserIdDialogListener
     @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-
-        Activity activity = getActivity();
-        // Verify that the host activity implements the callback interface
-        try {
-            // Instantiate the UserIdDialogListener so we can send events to the host
-            mListener = (UserIdDialogListener) activity;
-        } catch (ClassCastException e) {
-            // The activity doesn't implement the interface, throw exception
-            throw new ClassCastException(activity.toString()
-                    + " must implement UserIdDialogListener");
+    public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long id) {
+        Spinner spinner = (Spinner) adapterView;
+        if(spinner.getId() == R.id.user_id_spinner)
+        {
+            prefs.edit().putInt("userIdPos", pos).apply();
         }
+        else if(spinner.getId() == R.id.licence_plate_spinner)
+        {
+            prefs.edit().putString("evId", (String) spinner.getItemAtPosition(pos)).apply();
+            prefs.edit().putInt("evIdPos", pos).apply();
+        }
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+
     }
 }

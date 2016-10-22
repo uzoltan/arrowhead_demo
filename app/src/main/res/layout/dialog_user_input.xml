@@ -4,22 +4,18 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/user_id_edittext"
+    <eu.arrowhead.arrowheaddemo.CustomView.CustomSpinner
+        android:id="@+id/user_id_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:hint="@string/user_id"
-        android:maxLines="1"
-        android:textSize="20sp" />
+        android:prompt="@string/user_id" />
 
-    <EditText
-        android:id="@+id/licence_plate_edittext"
+    <eu.arrowhead.arrowheaddemo.CustomView.CustomSpinner
+        android:id="@+id/licence_plate_spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:hint="@string/licence_plate"
-        android:maxLines="1"
-        android:textSize="20sp" />
+        android:prompt="@string/licence_plate" />
 
 </LinearLayout>

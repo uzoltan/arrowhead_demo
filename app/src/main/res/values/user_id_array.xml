@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="user_id_array">
+        <item>Demo User 1</item>
+        <item>Demo User 2</item>
+        <item>Demo User 3</item>
+        <item>Demo User 4</item>
+    </string-array>
+</resources>

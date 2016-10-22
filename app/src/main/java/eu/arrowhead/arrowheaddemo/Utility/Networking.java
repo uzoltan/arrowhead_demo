@@ -78,6 +78,7 @@ public class Networking {
                     try {
                         httpsURLConnection.setSSLSocketFactory(getSSLSocketFactory());
                         httpsURLConnection.setHostnameVerifier(getHostnameVerifier());
+                        httpsURLConnection.setConnectTimeout(20000);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

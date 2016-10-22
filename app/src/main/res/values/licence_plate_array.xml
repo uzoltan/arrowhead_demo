@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="ev_id_array">
+        <item>ABC-123</item>
+        <item>ABC-987</item>
+        <item>XYZ-123</item>
+        <item>XYZ-987</item>
+    </string-array>
+</resources>

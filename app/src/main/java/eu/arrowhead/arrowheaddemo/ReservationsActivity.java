@@ -40,13 +40,11 @@ import eu.arrowhead.arrowheaddemo.messages.ChargingResponse;
 
 public class ReservationsActivity extends FragmentActivity implements
         OnMapReadyCallback,
-        UserInputFragment.UserIdDialogListener,
         TimePickerFragment.TimePickerListener,
         ReadyToChargeFragment.ReadyToChargeListener,
         ServerEndpointFragment.ServerEndpointListener{
 
     private SharedPreferences prefs;
-    private String userId, EVId;
     private GoogleMap mMap;
     private Marker marker;
     private Button reserveCharging, readyToCharge;
@@ -94,13 +92,10 @@ public class ReservationsActivity extends FragmentActivity implements
                     Toast.makeText(ReservationsActivity.this, R.string.no_internet_warning, Toast.LENGTH_LONG).show();
                 }
                 else{
-                    userId = prefs.getString("userId", null);
-                    EVId = prefs.getString("EVId", null);
-
-                    if(userId == null || userId.isEmpty()){
+                    if(prefs.getInt("userIdPos", -1) == -1){
                         Toast.makeText(ReservationsActivity.this, R.string.no_user_id_warning, Toast.LENGTH_LONG).show();
                     }
-                    else if(EVId == null || EVId.isEmpty()){
+                    else if(prefs.getInt("evIdPos", -1) == -1){
                         Toast.makeText(ReservationsActivity.this, R.string.no_ev_id_warning, Toast.LENGTH_LONG).show();
                     }
                     else{
@@ -115,9 +110,10 @@ public class ReservationsActivity extends FragmentActivity implements
                                         new Response.Listener<JSONObject>() {
                                             @Override
                                             public void onResponse(JSONObject response){
+                                                Log.i("charge_request_response", response.toString());
                                                 ChargingResponse chargingResponse = Utility.fromJsonObject(response.toString(), ChargingResponse.class);
                                                 if(chargingResponse.getOccpChargePointStatus() == null ||
-                                                        chargingResponse.getOccpChargePointStatus().equals("Rejected")){
+                                                        !chargingResponse.getOccpChargePointStatus().equals("Rejected")){
                                                     Toast.makeText(ReservationsActivity.this, R.string.cpms_rejected_the_request, Toast.LENGTH_LONG).show();
                                                 }
                                                 else{
@@ -143,6 +139,7 @@ public class ReservationsActivity extends FragmentActivity implements
                                         new Response.ErrorListener() {
                                             @Override
                                             public void onErrorResponse(VolleyError error) {
+                                                Log.i("charge_request_error", error.toString());
                                                 Toast.makeText(ReservationsActivity.this,
                                                         "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                                             }}
@@ -168,7 +165,6 @@ public class ReservationsActivity extends FragmentActivity implements
             }
         });
 
-        //TODO longclick listener readytocharge-ra, ami alap állapotba rakja az appet, user inputokat is törli
         readyToCharge.setOnLongClickListener(new Button.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
@@ -176,8 +172,9 @@ public class ReservationsActivity extends FragmentActivity implements
                 reserveCharging.setEnabled(true);
                 readyToCharge.setEnabled(false);
                 prefs.edit().putBoolean("isThereReservation", false).apply();
-                prefs.edit().putString("userId", "").apply();
-                prefs.edit().putString("EVId", "").apply();
+                prefs.edit().remove("userIdPos").apply();
+                prefs.edit().remove("evIdPos").apply();
+                prefs.edit().remove("evId").apply();
                 return false;
             }
         });
@@ -214,12 +211,37 @@ public class ReservationsActivity extends FragmentActivity implements
         location.put("latitude", latitude);
         location.put("longitude", longitude);
 
+        String userId;
+        switch(prefs.getInt("userIdPos", -1)){
+            case 0:
+                userId = "43e4baf7";
+                break;
+            case 1:
+                userId = "e136137e";
+                break;
+            case 2:
+                userId = "3df01758";
+                break;
+            case 3:
+                userId = "fe44a1a8";
+                break;
+            default: userId = "43e4baf7";
+        }
+
+        int evIdPos = prefs.getInt("evIdPos", -1);
+        String chargerId;
+        if(evIdPos == 0 || evIdPos == 1){
+            chargerId = "eACC0010";
+        }
+        else{
+            chargerId = "eACC0025";
+        }
+
         JSONObject chargingRequest = new JSONObject();
         chargingRequest.put("userId", userId);
-        chargingRequest.put("evId", EVId);
+        chargingRequest.put("evId", prefs.getString("evId", "HCS-DA-BEST-007"));
         chargingRequest.put("location", location);
-        //TODO hardwired!
-        chargingRequest.put("chargerId", "eACC0010");
+        chargingRequest.put("chargerId", chargerId);
         Log.i("charge_request_payload", chargingRequest.toString());
         return chargingRequest;
     }
@@ -290,25 +312,6 @@ public class ReservationsActivity extends FragmentActivity implements
         }
     }
 
-    //Callback method for the UserInputFragment
-    @Override
-    public void onDialogPositiveClick(DialogFragment dialog) {
-        EditText userId = (EditText) dialog.getDialog().findViewById(R.id.user_id_edittext);
-        EditText EVId = (EditText) dialog.getDialog().findViewById(R.id.licence_plate_edittext);
-
-        if(!userId.getText().toString().isEmpty()){
-            prefs.edit().putString("userId", userId.getText().toString()).apply();
-        }
-        if(!EVId.getText().toString().isEmpty()){
-            prefs.edit().putString("EVId", EVId.getText().toString()).apply();
-        }
-
-        //Show a "Saved" toast if we actually saved at least one input
-        if(!userId.getText().toString().isEmpty() || !EVId.getText().toString().isEmpty()){
-            Toast.makeText(ReservationsActivity.this, R.string.saved, Toast.LENGTH_SHORT).show();
-        }
-    }
-
     //Callback method for the TimePickerFragment
     @Override
     public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
@@ -355,6 +358,8 @@ public class ReservationsActivity extends FragmentActivity implements
                                 new Response.Listener<JSONObject>() {
                                     @Override
                                     public void onResponse(JSONObject response){
+                                        Log.i("readyto_charge_response", response.toString());
+                                        //TODO check the response to show the right toast (+if-else)
                                         Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
                                         reserveCharging.setEnabled(true);
                                         readyToCharge.setEnabled(false);
@@ -364,6 +369,7 @@ public class ReservationsActivity extends FragmentActivity implements
                                 new Response.ErrorListener() {
                                     @Override
                                     public void onErrorResponse(VolleyError error) {
+                                        Log.i("ready_to_charge_error", error.toString());
                                         Toast.makeText(ReservationsActivity.this,
                                                 "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                                     }}
