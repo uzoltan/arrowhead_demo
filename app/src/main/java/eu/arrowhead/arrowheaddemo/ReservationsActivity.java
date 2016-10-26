@@ -18,6 +18,7 @@ import android.widget.EditText;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
@@ -32,6 +33,8 @@ import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.concurrent.TimeUnit;
 
 import eu.arrowhead.arrowheaddemo.Utility.Networking;
 import eu.arrowhead.arrowheaddemo.Utility.PermissionUtils;
@@ -113,7 +116,7 @@ public class ReservationsActivity extends FragmentActivity implements
                                                 Log.i("charge_request_response", response.toString());
                                                 ChargingResponse chargingResponse = Utility.fromJsonObject(response.toString(), ChargingResponse.class);
                                                 if(chargingResponse.getOccpChargePointStatus() == null ||
-                                                        !chargingResponse.getOccpChargePointStatus().equals("Rejected")){
+                                                        chargingResponse.getOccpChargePointStatus().equals("Rejected")){
                                                     Toast.makeText(ReservationsActivity.this, R.string.cpms_rejected_the_request, Toast.LENGTH_LONG).show();
                                                 }
                                                 else{
@@ -144,6 +147,10 @@ public class ReservationsActivity extends FragmentActivity implements
                                                         "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                                             }}
                                 );
+                        jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(
+                                (int) TimeUnit.SECONDS.toMillis(20),
+                                0,  // maxNumRetries = 0 means no retry
+                                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
                         Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
                         Toast.makeText(ReservationsActivity.this, R.string.request_sent, Toast.LENGTH_SHORT).show();
                     }
@@ -374,6 +381,10 @@ public class ReservationsActivity extends FragmentActivity implements
                                                 "Network error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                                     }}
                         );
+                jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(
+                        (int) TimeUnit.SECONDS.toMillis(20),
+                        0,  // maxNumRetries = 0 means no retry
+                        DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
                 Networking.getInstance(ReservationsActivity.this).addToRequestQueue(jsObjRequest);
 
                 /*//TEST CODE for skipping network call
