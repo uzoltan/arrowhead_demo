@@ -40,6 +40,7 @@ import eu.arrowhead.arrowheaddemo.Utility.Networking;
 import eu.arrowhead.arrowheaddemo.Utility.PermissionUtils;
 import eu.arrowhead.arrowheaddemo.Utility.Utility;
 import eu.arrowhead.arrowheaddemo.messages.ChargingResponse;
+import eu.arrowhead.arrowheaddemo.messages.ReadyForChargeResponse;
 
 public class ReservationsActivity extends FragmentActivity implements
         OnMapReadyCallback,
@@ -125,8 +126,16 @@ public class ReservationsActivity extends FragmentActivity implements
                                                             ChargingResponseFragment.newInstance(chargingResponse.getChargingRequestId(), chargingResponse.getOccpChargePointStatus());
                                                     newFragment.show(getSupportFragmentManager(), ChargingResponseFragment.TAG);
 
-                                                    double latitude = chargingResponse.getChargePointLocation().getLatitude();
-                                                    double longitude = chargingResponse.getChargePointLocation().getLongitude();
+                                                    double latitude;
+                                                    double longitude;
+                                                    if(chargingResponse.getChargePointLocation() == null){
+                                                        latitude = 43.779861;
+                                                        longitude = 11.248963;
+                                                    }
+                                                    else{
+                                                        latitude = chargingResponse.getChargePointLocation().getLatitude();
+                                                        longitude = chargingResponse.getChargePointLocation().getLongitude();
+                                                    }
                                                     LatLng chargingStation = new LatLng(latitude, longitude);
                                                     marker = mMap.addMarker(new MarkerOptions().position(chargingStation).title("Charging station"));
                                                     Toast.makeText(ReservationsActivity.this, R.string.charging_station_displayed, Toast.LENGTH_LONG).show();
@@ -366,12 +375,18 @@ public class ReservationsActivity extends FragmentActivity implements
                                     @Override
                                     public void onResponse(JSONObject response){
                                         Log.i("readyto_charge_response", response.toString());
-                                        //TODO check the response to show the right toast (+if-else)
-                                        Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
-                                        reserveCharging.setEnabled(true);
-                                        readyToCharge.setEnabled(false);
-                                        marker.remove();
-                                        prefs.edit().putBoolean("isThereReservation", false).apply();
+                                        ReadyForChargeResponse chargingResponse = Utility.fromJsonObject(response.toString(), ReadyForChargeResponse.class);
+                                        if(chargingResponse.getResponseMessage() == null ||
+                                                !chargingResponse.getResponseMessage().equals("Success")){
+                                            Toast.makeText(ReservationsActivity.this, R.string.cpms_rejected_the_request, Toast.LENGTH_LONG).show();
+                                        }
+                                        else {
+                                            Toast.makeText(ReservationsActivity.this, R.string.cpms_accepted_request, Toast.LENGTH_SHORT).show();
+                                            reserveCharging.setEnabled(true);
+                                            readyToCharge.setEnabled(false);
+                                            marker.remove();
+                                            prefs.edit().putBoolean("isThereReservation", false).apply();
+                                        }
                                     }},
                                 new Response.ErrorListener() {
                                     @Override
